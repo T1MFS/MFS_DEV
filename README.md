@@ -1,2 +1,37 @@
-# MFS_DEV
-IPHONE app that is a loop alternative. Uses tidepool api for all external data logging. Allows dosing for carbs and protein. Allows programmable fat based slow down of distributed bolus. All other objectives targeted for V1+.
+# MFS
+
+A standalone SwiftUI iOS app with sections for **Manage**, **Food**, **Evaluate**, and **Carb Ratio**. The Food Scan screen opens the camera, captures a photo when Scan is tapped, detects a barcode with Apple Vision, and looks up nutrition from the Open Food Facts v3 API. Barcode results show nutrition for one serving and the whole package with an Open Food Facts attribution link.
+
+Open `MFS.xcodeproj`, select the MFS scheme, choose an iOS Simulator, and run. The shared `MFSTests` scheme includes a fixture-based scan test using `IMG_0270.HEIC` and a stubbed Open Food Facts response.
+
+## Local Tidepool nutrition mapping
+
+Verified 2026-09-27 against Tidepool's authoritative [Food documentation](https://tidepool.redocly.app/docs/device-data/data-types/food) and [API schema repository](https://github.com/tidepool-org/TidepoolApi/tree/89007e44d8d03bacdb7f74c454cb8bebbc9889f5). Schema files: `reference/common/models/nutrition.v1.yaml`, `energy/kilocalories.v1.yaml`, `reference/data/models/food/food.v1.yaml`, and `reference/data/models/amount.v1.yaml`.
+
+`TidepoolNutritionMapper.map(product, consumedGrams: ...)` creates an Encodable **nutrition fragment**, with local issues and consumed mass. It does not create a complete food event, authenticate, or send data. The scanner retains unrounded numeric OFF `_100g` values separately from display strings. Callers must confirm the source is mass-based per 100 g (not per 100 ml), and explicitly supply consumed grams; the free-text serving size is not parsed. Accept invokes the mapper through a local preparation boundary for gram-based servings.
+
+| MFS field | Tidepool nutrition path | Rule |
+| --- | --- | --- |
+| Calories (`energy-kcal`) | `energy.value`, units `kilocalories` | Scale by consumed grams / 100; range 0–10000 |
+| Total fat | `fat.total`, units `grams` | Scale; range 0–1000 |
+| Protein | `protein.total`, units `grams` | Scale; range 0–1000 |
+| Carbohydrates | `carbohydrate.total` | MFS treats source as total including fiber under the requested net policy |
+| Fiber / total sugars | `carbohydrate.dietaryFiber` / `sugars` | Only within a valid carbohydrate object |
+| Confirmed net carbs | `carbohydrate.net`, units `grams` | Required by Tidepool if carbohydrate is present; defaults to total minus half fiber; user override supported |
+| Saturated/trans fat, cholesterol, sodium, added sugars, vitamin D, calcium, iron, potassium, salt | No dedicated Nutrition fields | Retained locally, reported as unmapped |
+
+All carbohydrate values are scaled and checked against 0–1000 grams. Default `.totalMinusHalfFiber` estimates net as total carbohydrate minus half dietary fiber, per the requested MFS policy. Both fields must be present and fiber must not exceed total. This is an app policy, not a Tidepool schema rule or a claim about every OFF label convention. `.confirmedTotalAndNet(netPer100g:)` accepts a user-edited net amount and confirms the total basis; overrides must be nonnegative and no greater than a known total. The override is per 100 g and scales with the consumed portion. `.unverified` omits the whole carbohydrate object. A future editing UI can pass the override; no nutrition-editing UI is added here. Missing values stay absent, zero stays zero, invalid/nonfinite/negative/out-of-range values are omitted with issues, and no values are clamped. Nutrition values describe the entire consumed portion, not concentration. Absorption duration is not inferred.
+
+A complete Tidepool `food` record additionally requires brand, code, meal, name, and the common event context. Barcode/name/brand are candidate metadata, but optional brands, fallback names, missing meal/time, and string length limits (1–100) need validation before any future record builder. A scanned product is not evidence of consumption. This implementation deliberately exposes no food-record builder or upload endpoint. It does not repurpose insulin/bolus-calculator events or hide unsupported nutrients in arbitrary payload fields. Schema compatibility alone does not establish server acceptance, account permissions, or display support.
+
+MFS remains standalone with Foundation/Vision and its existing OFF client only. Mapping tests cover portions, JSON keys/units, missing versus zero, unsupported fields, invalid quantities, schema limits, and unverified carbohydrates.
+
+## Scan servings
+
+The scan screen has an editable Number of servings field. It defaults to the whole package, calculated from OFF `product_quantity / serving_quantity` only when both are positive finite values with matching `g` or `ml` units. See the [OFF product schema](https://openfoodfacts.github.io/documentation/docs/Product-Opener/schemas/schemas/product/). Missing or incompatible quantities leave the field empty for manual entry. Fractional servings are supported. Accept requires a positive count and retains it for the current scan; editing clears the accepted state, and a new lookup clears the previous product and count. Barcode nutrition facts show only “1 serving” and “Per package,” calculated from the database’s normalized quantities and nutrient basis. The database’s per-100-g/ml values remain internal. Unknown serving or package quantities show dashes in the corresponding column. Changing the selected count does not change either reference column. No data is uploaded.
+
+## Accept and Manage
+
+Accept snapshots the scanned product and selected servings, prepares a local Tidepool nutrition fragment, and opens Manage. Manage defaults to total carbs; radio controls choose total or net (total minus half fiber). The displayed result is the selected carbs divided by the saved ratio, without dose units or rounding to a delivery increment. Missing source values show unavailable rather than zero. The Carb Ratio tab defaults to 30, rejects nonpositive/nonfinite values, and saves changes in UserDefaults across launches. Changing the saved ratio updates Manage. Accepted food and its draft currently live only for the app session and the latest acceptance replaces the prior one.
+
+The Tidepool extension boundary prepares nutrition JSON only, with compatibility issues retained beside it. No uploads occur. Volume-based portions remain available to Manage but are not passed as grams to the local mapper. Missing event metadata and schema gaps still apply.

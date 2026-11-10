@@ -39,7 +39,7 @@ platform :ios do
       scheme: "MFS",
       device: "iPhone 15",
       clean: true,
-      xcargs: PINNED_PACKAGES_ARGS
+      xcargs: "#{PINNED_PACKAGES_ARGS} ONLY_ACTIVE_ARCH=YES"
     )
   end
 

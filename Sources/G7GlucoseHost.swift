@@ -33,7 +33,7 @@ final class G7GlucoseHost: NSObject, ObservableObject, CGMManagerDelegate {
 
     private func handle(_ result: CGMReadingResult) {
         guard case .newData(let samples) = result else { return }
-        let unit = HKUnit.milligramsPerDeciliter
+        let unit = HKUnit.gramUnit(with: .milli).unitDivided(by: .literUnit(with: .deci))
         let new = samples.map { GlucoseReading(date: $0.date, milligramsPerDeciliter: $0.quantity.doubleValue(for: unit)) }
         DispatchQueue.main.async {
             let known = Set(self.readings.map(\.date))

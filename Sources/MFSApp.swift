@@ -26,7 +26,7 @@ private enum MFSSection: String, CaseIterable, Identifiable {
 struct MFSApp: App {
     @StateObject private var foodStore = AcceptedFoodStore()
     @StateObject private var glucoseFeed: GlucoseFeed
-    private let cgmHost: AnyObject
+    private let cgmHost: AnyObject?
     private let fetchGlucose: () -> Void
     @State private var selectedSection: MFSSection = .manage
     @State private var managePath = NavigationPath()
@@ -36,7 +36,11 @@ struct MFSApp: App {
     init() {
         let feed = GlucoseFeed()
         _glucoseFeed = StateObject(wrappedValue: feed)
-        if MockGlucoseHost.isEnabled {
+        // Like LoopKit's example host, don't start device managers when hosting XCTest.
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+            cgmHost = nil
+            fetchGlucose = {}
+        } else if MockGlucoseHost.isEnabled {
             let host = MockGlucoseHost(feed: feed)
             cgmHost = host
             fetchGlucose = { host.fetchNewData() }

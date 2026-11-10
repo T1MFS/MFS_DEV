@@ -5,7 +5,7 @@ import OmnipodKit
 /// Restores a previously paired Omnipod DASH manager and records its reservoir and history callbacks.
 /// Read-only: this type never issues delivery commands (enforced by scripts/check_no_delivery_commands.sh).
 final class OmnipodHistoryReader: NSObject, ObservableObject, PumpManagerDelegate {
-    struct HistoryEvent: Equatable {
+    struct HistoryEvent: Hashable {
         let date: Date
         let title: String
     }

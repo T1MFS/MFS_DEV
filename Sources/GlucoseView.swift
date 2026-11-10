@@ -4,13 +4,13 @@ import Charts
 /// Glucose trend with a movable meal marker, shown as sections inside the Manage list.
 /// Food and dose do not influence the forecast yet.
 struct GlucoseView: View {
-    @EnvironmentObject private var host: G7GlucoseHost
+    @EnvironmentObject private var feed: GlucoseFeed
     @EnvironmentObject private var store: AcceptedFoodStore
 
     private let forecaster = GlucoseForecaster()
     private let window: TimeInterval = 2 * 60 * 60
 
-    private var readings: [GlucoseReading] { host.readings }
+    private var readings: [GlucoseReading] { feed.readings }
     private var anchor: Date { readings.last?.date ?? Date() }
     private var mealTime: Date { store.mealTime ?? anchor }
     private var domain: ClosedRange<Date> { anchor.addingTimeInterval(-window)...anchor.addingTimeInterval(window) }

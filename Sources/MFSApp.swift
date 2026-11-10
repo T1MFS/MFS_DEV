@@ -25,11 +25,27 @@ private enum MFSSection: String, CaseIterable, Identifiable {
 @main
 struct MFSApp: App {
     @StateObject private var foodStore = AcceptedFoodStore()
-    @StateObject private var glucoseHost = G7GlucoseHost()
+    @StateObject private var glucoseFeed: GlucoseFeed
+    private let cgmHost: AnyObject
+    private let fetchGlucose: () -> Void
     @State private var selectedSection: MFSSection = .manage
     @State private var managePath = NavigationPath()
     @State private var foodPath = NavigationPath()
     @State private var evaluatePath = NavigationPath()
+
+    init() {
+        let feed = GlucoseFeed()
+        _glucoseFeed = StateObject(wrappedValue: feed)
+        if MockGlucoseHost.isEnabled {
+            let host = MockGlucoseHost(feed: feed)
+            cgmHost = host
+            fetchGlucose = { host.fetchNewData() }
+        } else {
+            let host = G7GlucoseHost(feed: feed)
+            cgmHost = host
+            fetchGlucose = { host.fetchNewData() }
+        }
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -61,8 +77,8 @@ struct MFSApp: App {
             .tint(Color(red: 0.16, green: 0.39, blue: 0.82))
             .preferredColorScheme(.light)
             .environmentObject(foodStore)
-            .environmentObject(glucoseHost)
-            .onAppear { glucoseHost.fetchNewData() }
+            .environmentObject(glucoseFeed)
+            .onAppear { fetchGlucose() }
             .onChange(of: foodStore.food?.id) { _, id in
                 guard id != nil else { return }
                 managePath = NavigationPath()

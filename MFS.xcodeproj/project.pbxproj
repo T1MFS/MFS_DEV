@@ -6,6 +6,20 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B10000000000000000000101 /* LoopKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* LoopKit.framework */; };
+		B10000000000000000000201 /* LoopKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* LoopKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		B10000000000000000000102 /* LoopKitUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* LoopKitUI.framework */; };
+		B10000000000000000000202 /* LoopKitUI.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* LoopKitUI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		B10000000000000000000103 /* G7SensorKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000003 /* G7SensorKit.framework */; };
+		B10000000000000000000203 /* G7SensorKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000003 /* G7SensorKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		B10000000000000000000104 /* OmnipodKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000004 /* OmnipodKit.framework */; };
+		B10000000000000000000204 /* OmnipodKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000004 /* OmnipodKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		B10000000000000000000105 /* RileyLinkBLEKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000005 /* RileyLinkBLEKit.framework */; };
+		B10000000000000000000205 /* RileyLinkBLEKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000005 /* RileyLinkBLEKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		B10000000000000000000106 /* RileyLinkKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* RileyLinkKit.framework */; };
+		B10000000000000000000206 /* RileyLinkKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* RileyLinkKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		B10000000000000000000107 /* RileyLinkKitUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000007 /* RileyLinkKitUI.framework */; };
+		B10000000000000000000207 /* RileyLinkKitUI.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000007 /* RileyLinkKitUI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A10000000000000000000001 /* MFSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* MFSApp.swift */; };
 		A10000000000000000000011 /* NutritionScanCaptureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000013 /* NutritionScanCaptureTests.swift */; };
 		A10000000000000000000012 /* IMG_0270.HEIC in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* IMG_0270.HEIC */; };
@@ -14,6 +28,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		B10000000000000000000001 /* LoopKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = LoopKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000002 /* LoopKitUI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = LoopKitUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000003 /* G7SensorKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = G7SensorKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000004 /* OmnipodKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = OmnipodKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000005 /* RileyLinkBLEKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = RileyLinkBLEKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000006 /* RileyLinkKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = RileyLinkKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000007 /* RileyLinkKitUI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = RileyLinkKitUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000002 /* MFSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MFSApp.swift; sourceTree = "<group>"; };
 		A10000000000000000000003 /* MFS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MFS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000013 /* NutritionScanCaptureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutritionScanCaptureTests.swift; sourceTree = "<group>"; };
@@ -23,8 +44,12 @@
 		A10000000000000000000030 /* NutritionScanning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/NutritionScanning.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		B1000000000000000000300 /* Embed Frameworks */ = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 10; files = (B10000000000000000000201 /* LoopKit.framework in Embed Frameworks */, B10000000000000000000202 /* LoopKitUI.framework in Embed Frameworks */, B10000000000000000000203 /* G7SensorKit.framework in Embed Frameworks */, B10000000000000000000204 /* OmnipodKit.framework in Embed Frameworks */, B10000000000000000000205 /* RileyLinkBLEKit.framework in Embed Frameworks */, B10000000000000000000206 /* RileyLinkKit.framework in Embed Frameworks */, B10000000000000000000207 /* RileyLinkKitUI.framework in Embed Frameworks */, ); name = "Embed Frameworks"; runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFrameworksBuildPhase section */
-		A10000000000000000000004 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000004 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000101 /* LoopKit.framework in Frameworks */, B10000000000000000000102 /* LoopKitUI.framework in Frameworks */, B10000000000000000000103 /* G7SensorKit.framework in Frameworks */, B10000000000000000000104 /* OmnipodKit.framework in Frameworks */, B10000000000000000000105 /* RileyLinkBLEKit.framework in Frameworks */, B10000000000000000000106 /* RileyLinkKit.framework in Frameworks */, B10000000000000000000107 /* RileyLinkKitUI.framework in Frameworks */, ); runOnlyForDeploymentPostprocessing = 0; };
 		A10000000000000000000018 /* MFSTests Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000029 /* XCTest.framework in Frameworks */,); runOnlyForDeploymentPostprocessing = 0; };
 		A10000000000000000000019 /* MFSTests Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000011 /* NutritionScanCaptureTests.swift in Sources */, A10000000000000000000031 /* NutritionScanning.swift in MFSTests Sources */,); runOnlyForDeploymentPostprocessing = 0; };
 		A10000000000000000000020 /* MFSTests Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000012 /* IMG_0270.HEIC in Resources */,); runOnlyForDeploymentPostprocessing = 0; };
@@ -37,6 +62,7 @@
 				A10000000000000000000002 /* MFSApp.swift */,
 				A10000000000000000000030 /* NutritionScanning.swift */,
 				A10000000000000000000016 /* MFSTests */, 
+				B1000000000000000000301 /* Frameworks */,
 				A10000000000000000000006 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -59,6 +85,20 @@
 			path = Tests/MFSTests;
 			sourceTree = "<group>";
 		};
+		B1000000000000000000301 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000001 /* LoopKit.framework */,
+				B10000000000000000000002 /* LoopKitUI.framework */,
+				B10000000000000000000003 /* G7SensorKit.framework */,
+				B10000000000000000000004 /* OmnipodKit.framework */,
+				B10000000000000000000005 /* RileyLinkBLEKit.framework */,
+				B10000000000000000000006 /* RileyLinkKit.framework */,
+				B10000000000000000000007 /* RileyLinkKitUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -68,6 +108,7 @@
 			buildPhases = (
 				A10000000000000000000004 /* Frameworks */,
 				A10000000000000000000009 /* Sources */,
+				B1000000000000000000300 /* Embed Frameworks */,
 			);
 			buildRules = ();
 			dependencies = ();
@@ -139,7 +180,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ENABLE_MODULES = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
 			};
@@ -150,7 +191,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ENABLE_MODULES = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
 			};
@@ -165,7 +206,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = MFS;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Use the camera to scan food product barcodes.";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.mfs;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -180,7 +221,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGNING_ALLOWED = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.mfs.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -197,7 +238,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGNING_ALLOWED = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.mfs.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -216,7 +257,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = MFS;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Use the camera to scan food product barcodes.";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.mfs;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

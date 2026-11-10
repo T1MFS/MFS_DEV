@@ -1,5 +1,7 @@
 # MFS
 
+Project plan (epics, user stories, technical tasks): [docs/](docs/README.md).
+
 A standalone SwiftUI iOS app with sections for **Manage**, **Food**, **Evaluate**, and **Carb Ratio**. The Food Scan screen opens the camera, captures a photo when Scan is tapped, detects a barcode with Apple Vision, and looks up nutrition from the Open Food Facts v3 API. Barcode results show nutrition for one serving and the whole package with an Open Food Facts attribution link.
 
 Open `MFS.xcodeproj`, select the MFS scheme, choose an iOS Simulator, and run. The shared `MFSTests` scheme includes a fixture-based scan test using `IMG_0270.HEIC` and a stubbed Open Food Facts response.

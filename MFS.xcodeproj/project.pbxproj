@@ -1,0 +1,237 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* MFSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* MFSApp.swift */; };
+		A10000000000000000000011 /* NutritionScanCaptureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000013 /* NutritionScanCaptureTests.swift */; };
+		A10000000000000000000012 /* IMG_0270.HEIC in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* IMG_0270.HEIC */; };
+		A10000000000000000000010 /* NutritionScanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000030 /* NutritionScanning.swift */; };
+		A10000000000000000000031 /* NutritionScanning.swift in MFSTests Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000030 /* NutritionScanning.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A10000000000000000000002 /* MFSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MFSApp.swift; sourceTree = "<group>"; };
+		A10000000000000000000003 /* MFS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MFS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000013 /* NutritionScanCaptureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutritionScanCaptureTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000014 /* IMG_0270.HEIC */ = {isa = PBXFileReference; lastKnownFileType = image.heic; path = Fixtures/IMG_0270.HEIC; sourceTree = "<group>"; };
+		A10000000000000000000015 /* MFSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MFSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000028 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
+		A10000000000000000000030 /* NutritionScanning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/NutritionScanning.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A10000000000000000000004 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000018 /* MFSTests Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000029 /* XCTest.framework in Frameworks */,); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000019 /* MFSTests Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000011 /* NutritionScanCaptureTests.swift in Sources */, A10000000000000000000031 /* NutritionScanning.swift in MFSTests Sources */,); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000020 /* MFSTests Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000012 /* IMG_0270.HEIC in Resources */,); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A10000000000000000000005 = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000002 /* MFSApp.swift */,
+				A10000000000000000000030 /* NutritionScanning.swift */,
+				A10000000000000000000016 /* MFSTests */, 
+				A10000000000000000000006 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A10000000000000000000006 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000003 /* MFS.app */,
+				A10000000000000000000015 /* MFSTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000016 /* MFSTests */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000013 /* NutritionScanCaptureTests.swift */,
+				A10000000000000000000014 /* IMG_0270.HEIC */,
+			);
+			path = Tests/MFSTests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A10000000000000000000007 /* MFS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000008 /* Build configuration list for PBXNativeTarget "MFS" */;
+			buildPhases = (
+				A10000000000000000000004 /* Frameworks */,
+				A10000000000000000000009 /* Sources */,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = MFS;
+			productName = MFS;
+			productReference = A10000000000000000000003 /* MFS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A1000000000000000000000A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 2700;
+				TargetAttributes = {
+					A10000000000000000000007 = {CreatedOnToolsVersion = 27.0; };
+					A10000000000000000000021 = {CreatedOnToolsVersion = 27.0; TestTargetID = A10000000000000000000007; };
+				};
+			};
+			buildConfigurationList = A1000000000000000000000B /* Build configuration list for PBXProject "MFS" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (en, Base);
+			mainGroup = A10000000000000000000005;
+			productRefGroup = A10000000000000000000006 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A10000000000000000000007 /* MFS */,
+				A10000000000000000000021 /* MFSTests */,
+			);
+		};
+/* End PBXProject section */
+
+		A10000000000000000000021 /* MFSTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000022 /* Build configuration list for PBXNativeTarget "MFSTests" */;
+			buildPhases = (
+				A10000000000000000000018 /* MFSTests Frameworks */,
+				A10000000000000000000019 /* MFSTests Sources */,
+				A10000000000000000000020 /* MFSTests Resources */,
+			);
+			buildRules = ();
+			dependencies = (A10000000000000000000025 /* MFS test host dependency */,);
+			name = MFSTests;
+			productName = MFSTests;
+			productReference = A10000000000000000000015 /* MFSTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* Begin PBXSourcesBuildPhase section */
+		A10000000000000000000009 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001 /* MFSApp.swift in Sources */, A10000000000000000000010 /* NutritionScanning.swift in Sources */,); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+		A10000000000000000000024 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A1000000000000000000000A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000007;
+			remoteInfo = MFS;
+		};
+		A10000000000000000000025 /* MFS test host dependency */ = {isa = PBXTargetDependency; target = A10000000000000000000007 /* MFS */; targetProxy = A10000000000000000000024 /* PBXContainerItemProxy */; };
+		A10000000000000000000029 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10000000000000000000028 /* XCTest.framework */; };
+/* Begin XCBuildConfiguration section */
+		A1000000000000000000000C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A1000000000000000000000D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		A1000000000000000000000E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				ENABLE_TESTABILITY = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = MFS;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Use the camera to scan food product barcodes.";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.mfs;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		A10000000000000000000023 /* MFSTests Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.mfs.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MFS.app/MFS";
+			};
+			name = Debug;
+		};
+		A10000000000000000000027 /* MFSTests Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.mfs.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MFS.app/MFS";
+			};
+			name = Release;
+		};
+		A1000000000000000000000F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = MFS;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Use the camera to scan food product barcodes.";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.mfs;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A10000000000000000000022 /* Build configuration list for PBXNativeTarget "MFSTests" */ = {isa = XCConfigurationList; buildConfigurations = (A10000000000000000000023 /* Debug */, A10000000000000000000027 /* Release */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A10000000000000000000008 /* Build configuration list for PBXNativeTarget "MFS" */ = {isa = XCConfigurationList; buildConfigurations = (A1000000000000000000000E /* Debug */, A1000000000000000000000F /* Release */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A1000000000000000000000B /* Build configuration list for PBXProject "MFS" */ = {isa = XCConfigurationList; buildConfigurations = (A1000000000000000000000C /* Debug */, A1000000000000000000000D /* Release */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = A1000000000000000000000A /* Project object */;
+}

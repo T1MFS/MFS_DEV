@@ -1,0 +1,50 @@
+name: 4. Build MFS
+run-name: Build MFS (${{ github.ref_name }})
+on:
+  workflow_dispatch:
+
+# Manual only. No upstream sync and no scheduled builds: a build uses exactly
+# the dependency versions pinned in Package.resolved and Gemfile.lock.
+
+jobs:
+  build:
+    name: Build and upload to TestFlight
+    runs-on: macos-15
+    permissions:
+      contents: read
+    env:
+      TEAMID: ${{ secrets.TEAMID }}
+      GH_PAT: ${{ secrets.GH_PAT }}
+      GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+      FASTLANE_KEY_ID: ${{ secrets.FASTLANE_KEY_ID }}
+      FASTLANE_ISSUER_ID: ${{ secrets.FASTLANE_ISSUER_ID }}
+      FASTLANE_KEY: ${{ secrets.FASTLANE_KEY }}
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Select Xcode version
+        run: sudo xcode-select --switch /Applications/Xcode_${{ vars.XCODE_VERSION || '16.4' }}.app/Contents/Developer
+
+      - name: Install Ruby gems
+        run: bundle install
+
+      - name: Sync clock
+        run: sudo sntp -sS time.windows.com
+
+      - name: Fastlane build and archive
+        run: bundle exec fastlane build_mfs
+
+      - name: Fastlane upload to TestFlight
+        run: bundle exec fastlane release
+
+      - name: Upload build log, IPA and symbol artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            artifacts
+            buildlog

@@ -1,0 +1,35 @@
+name: 3. Create Certificates
+run-name: Create Certificates (${{ github.ref_name }})
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  certs:
+    name: Create Certificates
+    runs-on: macos-15
+    env:
+      TEAMID: ${{ secrets.TEAMID }}
+      GH_PAT: ${{ secrets.GH_PAT }}
+      GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+      FASTLANE_KEY_ID: ${{ secrets.FASTLANE_KEY_ID }}
+      FASTLANE_ISSUER_ID: ${{ secrets.FASTLANE_ISSUER_ID }}
+      FASTLANE_KEY: ${{ secrets.FASTLANE_KEY }}
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - run: bundle install
+
+      - name: Check whether certificates are valid
+        run: bundle exec fastlane check_and_renew_certificates
+
+      - name: Nuke expired or missing certificates
+        run: |
+          if [ "$(cat new_certificate_needed.txt)" = "true" ]; then
+            bundle exec fastlane nuke_certs
+          fi
+
+      - name: Create certificates and profiles
+        run: bundle exec fastlane certs

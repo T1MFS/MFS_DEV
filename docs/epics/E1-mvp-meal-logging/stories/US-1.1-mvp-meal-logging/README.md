@@ -14,6 +14,7 @@
 - **Common reference:** the same food eaten more than once is cataloged in a shared reference, so repeats point to one entry.
 - **Logging:** accepted food instances are logged to DigitalMe (see [US-1.4](../US-1.4-digitalme-upload/README.md)).
 - **Self-regulated recommendations:** dose recommendations are advisory and the user decides. No active dosing: the app never delivers or commands insulin.
+- **Dose formula:** any link between food and dose goes through the dose formula. At minimum it uses protein and carbohydrates; fat may be considered as slowing digestion.
 - **Analysis basis:** food instances (especially repeated consumption of the same food) are time-matched to basal insulin dose and to pre- and post-prandial glucose response, so long-term analysis can be developed later.
 
 ## Out of scope

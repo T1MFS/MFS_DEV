@@ -320,27 +320,6 @@ enum TidepoolNutritionMapper {
     }
 }
 
-/// User-selected ratio, persisted independently of scanned food.
-struct CarbRatioSettings {
-    static let key = "mfs.carbRatio"
-    static let defaultValue = 30.0
-    let defaults: UserDefaults
-
-    init(defaults: UserDefaults = .standard) { self.defaults = defaults }
-
-    var value: Double {
-        let saved = defaults.double(forKey: Self.key)
-        return saved.isFinite && saved > 0 ? saved : Self.defaultValue
-    }
-
-    @discardableResult
-    func save(_ value: Double) -> Bool {
-        guard value.isFinite, value > 0 else { return false }
-        defaults.set(value, forKey: Self.key)
-        return true
-    }
-}
-
 struct AcceptedFood: Identifiable {
     let id = UUID()
     let product: OpenFoodFactsProduct
@@ -356,10 +335,16 @@ struct AcceptedFood: Identifiable {
         return result.isFinite ? result : nil
     }
 
-    func ratioResult(ratio: Double, useNet: Bool) -> Double? {
-        guard ratio.isFinite, ratio > 0,
-              let carbs = useNet ? netCarbohydrates : totalCarbohydrates else { return nil }
-        let result = carbs / ratio
+    var totalProtein: Double? { consumedAmount(of: .protein) }
+
+    var totalFat: Double? { consumedAmount(of: .totalFat) }
+
+    private func consumedAmount(of nutrient: NutritionField) -> Double? {
+        guard let quantity = product.servingQuantity, quantity.isFinite, quantity > 0,
+              product.servingUnit == "g" || product.servingUnit == "ml",
+              servings.isFinite, servings > 0,
+              let per100g = product.nutrientsPer100g[nutrient], per100g.isFinite, per100g >= 0 else { return nil }
+        let result = per100g * quantity / 100 * servings
         return result.isFinite ? result : nil
     }
 

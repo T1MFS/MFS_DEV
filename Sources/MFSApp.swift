@@ -2,6 +2,8 @@ import SwiftUI
 import AVFoundation
 import Vision
 import UIKit
+import G7SensorKit
+import OmnipodKit
 
 private enum MFSSection: String, CaseIterable, Identifiable {
     case manage = "Manage"

@@ -1,0 +1,15 @@
+name: Test
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - name: Select Xcode version
+        run: sudo xcode-select --switch /Applications/Xcode_${{ vars.XCODE_VERSION || '16.4' }}.app/Contents/Developer
+      - run: bundle install
+      - run: bundle exec fastlane test

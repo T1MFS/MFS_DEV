@@ -1,0 +1,180 @@
+# Modeled on LoopKit/LoopWorkspace's fastlane/Fastfile (Match-Secrets signing,
+# App Store Connect API key, TestFlight upload), reduced to the single MFS app.
+
+default_platform(:ios)
+
+TEAMID = ENV["TEAMID"]
+GH_PAT = ENV["GH_PAT"]
+GITHUB_WORKSPACE = ENV["GITHUB_WORKSPACE"] || Dir.pwd
+GITHUB_REPOSITORY_OWNER = ENV["GITHUB_REPOSITORY_OWNER"]
+FASTLANE_KEY_ID = ENV["FASTLANE_KEY_ID"]
+FASTLANE_ISSUER_ID = ENV["FASTLANE_ISSUER_ID"]
+FASTLANE_KEY = ENV["FASTLANE_KEY"]
+ENV["FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT"] = "120"
+
+PROJECT = "#{GITHUB_WORKSPACE}/MFS.xcodeproj"
+APP_ID = "com.#{TEAMID}.mfs"
+
+# Builds use only the versions in the checked-in Package.resolved and never
+# resolve or update dependencies; see .github/workflows/dependency_check.yml.
+PINNED_PACKAGES_ARGS = "-disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile"
+
+platform :ios do
+  def asc_api_key
+    app_store_connect_api_key(
+      key_id: "#{FASTLANE_KEY_ID}",
+      issuer_id: "#{FASTLANE_ISSUER_ID}",
+      key_content: "#{FASTLANE_KEY}"
+    )
+  end
+
+  def match_basic_auth
+    Base64.strict_encode64("#{GITHUB_REPOSITORY_OWNER}:#{GH_PAT}")
+  end
+
+  desc "Run unit tests on the simulator"
+  lane :test do
+    run_tests(
+      workspace: "MFS.xcworkspace",
+      scheme: "MFS",
+      device: "iPhone 15",
+      clean: true,
+      xcargs: PINNED_PACKAGES_ARGS
+    )
+  end
+
+  desc "Build MFS"
+  lane :build_mfs do
+    setup_ci if ENV['CI']
+
+    update_project_team(path: PROJECT, teamid: "#{TEAMID}")
+
+    api_key = asc_api_key
+
+    previous_build_number = latest_testflight_build_number(
+      app_identifier: APP_ID,
+      api_key: api_key
+    )
+
+    increment_build_number(
+      xcodeproj: PROJECT,
+      build_number: previous_build_number + 1
+    )
+
+    match(
+      type: "appstore",
+      git_basic_authorization: match_basic_auth,
+      app_identifier: [APP_ID]
+    )
+
+    mapping = Actions.lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING]
+
+    update_code_signing_settings(
+      path: PROJECT,
+      profile_name: mapping[APP_ID],
+      code_sign_identity: "iPhone Distribution",
+      targets: ["MFS"]
+    )
+
+    gym(
+      export_method: "app-store",
+      workspace: "#{GITHUB_WORKSPACE}/MFS.xcworkspace",
+      scheme: "MFS",
+      output_name: "MFS.ipa",
+      configuration: "Release",
+      destination: 'generic/platform=iOS',
+      buildlog_path: 'buildlog',
+      # The project ships with signing disabled and a placeholder bundle ID.
+      xcargs: "CODE_SIGNING_ALLOWED=YES PRODUCT_BUNDLE_IDENTIFIER=#{APP_ID} #{PINNED_PACKAGES_ARGS}"
+    )
+
+    copy_artifacts(
+      target_path: "artifacts",
+      artifacts: ["*.mobileprovision", "*.ipa", "*.dSYM.zip"]
+    )
+  end
+
+  desc "Push to TestFlight"
+  lane :release do
+    upload_to_testflight(
+      api_key: asc_api_key,
+      skip_submission: false,
+      ipa: "MFS.ipa",
+      skip_waiting_for_build_processing: true
+    )
+  end
+
+  desc "Provision Identifiers and Certificates"
+  lane :identifiers do
+    setup_ci if ENV['CI']
+    ENV["MATCH_READONLY"] = false.to_s
+    asc_api_key
+
+    bundle_id = Spaceship::ConnectAPI::BundleId.find(APP_ID) || Spaceship::ConnectAPI::BundleId.create(
+      name:       "MFS",
+      identifier: APP_ID,
+      platform:   "IOS"
+    )
+    UI.message("Bundle ID ready: #{bundle_id.identifier}")
+  end
+
+  desc "Provision Certificates"
+  lane :certs do
+    setup_ci if ENV['CI']
+    ENV["MATCH_READONLY"] = false.to_s
+    asc_api_key
+
+    match(
+      type: "appstore",
+      force: false,
+      verbose: true,
+      git_basic_authorization: match_basic_auth,
+      app_identifier: [APP_ID]
+    )
+  end
+
+  desc "Validate Secrets"
+  lane :validate_secrets do
+    setup_ci if ENV['CI']
+    ENV["MATCH_READONLY"] = true.to_s
+    asc_api_key
+
+    Spaceship::ConnectAPI::BundleId.find(APP_ID)
+
+    match(
+      type: "appstore",
+      git_basic_authorization: match_basic_auth,
+      app_identifier: []
+    )
+  end
+
+  desc "Nuke Certs"
+  lane :nuke_certs do
+    setup_ci if ENV['CI']
+    ENV["MATCH_READONLY"] = false.to_s
+    asc_api_key
+
+    match_nuke(
+      type: "appstore",
+      team_id: "#{TEAMID}",
+      skip_confirmation: true,
+      git_basic_authorization: match_basic_auth
+    )
+  end
+
+  desc "Check Certificates and Write new_certificate_needed.txt"
+  lane :check_and_renew_certificates do
+    setup_ci if ENV['CI']
+    ENV["MATCH_READONLY"] = false.to_s
+    asc_api_key
+
+    distribution_certs = Spaceship::ConnectAPI::Certificate.all.select { |c| c.certificate_type == "DISTRIBUTION" }
+
+    new_certificate_needed = distribution_certs.empty? ||
+      distribution_certs.any? { |c| Time.parse(c.expiration_date) < Time.now }
+
+    file_path = File.expand_path('new_certificate_needed.txt')
+    File.write(file_path, new_certificate_needed ? 'true' : 'false')
+    puts "Certificate creation or renewal needed: #{new_certificate_needed}"
+  end
+end

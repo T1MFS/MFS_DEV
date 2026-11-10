@@ -1,0 +1,44 @@
+name: Dependency Update Check
+on:
+  workflow_dispatch:
+
+# Report only. This workflow never edits Package.resolved or Gemfile.lock and
+# never triggers a build. Updating a pin is a deliberate, reviewed change.
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - run: bundle install
+
+      - name: Look for newer versions
+        id: check
+        run: |
+          ./scripts/check_dependency_updates.sh > updates.md
+          if [ -s updates.md ]; then echo "found=true" >> "$GITHUB_OUTPUT"; fi
+          cat updates.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open or update tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Dependency updates available"
+          number=$(gh issue list --label dependencies --state open --json number --jq '.[0].number // empty')
+          if [ "${{ steps.check.outputs.found }}" = "true" ]; then
+            body=$(printf 'Newer versions exist for the pinned dependencies below. Nothing was changed. Update pins manually and test before building.\n\n%s' "$(cat updates.md)")
+            if [ -n "$number" ]; then
+              gh issue edit "$number" --body "$body"
+            else
+              gh label create dependencies --color 0366d6 2>/dev/null || true
+              gh issue create --title "$title" --label dependencies --body "$body"
+            fi
+          elif [ -n "$number" ]; then
+            gh issue close "$number" --comment "All pinned dependencies are up to date."
+          fi

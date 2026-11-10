@@ -1,0 +1,14 @@
+xcuserdata/
+.DS_Store
+__MACOSX/
+build/
+DerivedData/
+*.ipa
+*.dSYM.zip
+fastlane/report.xml
+fastlane/test_output/
+vendor/
+.bundle/
+artifacts/
+buildlog/
+new_certificate_needed.txt

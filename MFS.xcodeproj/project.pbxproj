@@ -239,6 +239,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Use the camera to scan food product barcodes.";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", );
 				MFS_CODE_SIGNING_ALLOWED = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.mfs;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -292,6 +293,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Use the camera to scan food product barcodes.";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", );
 				MFS_CODE_SIGNING_ALLOWED = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.mfs;
 				PRODUCT_NAME = "$(TARGET_NAME)";

@@ -22,9 +22,10 @@ FAT_MAGIC = {
 }
 # Weak dependencies may legitimately be absent on the device.
 REQUIRED_DYLIB_COMMANDS = {0xC, 0x20, 0x8000001F, 0x80000023}
+LC_RPATH = 0x8000001C
 
 
-def dependencies(data):
+def macho_slices(data):
     magic = data[:4]
     if magic in FAT_MAGIC:
         endian, wide = FAT_MAGIC[magic]
@@ -33,13 +34,13 @@ def dependencies(data):
         entry_size = struct.calcsize(fmt)
         if count == 0 or count > (len(data) - 8) // entry_size:
             raise ValueError("invalid universal Mach-O header")
-        result = set()
+        result = []
         for i in range(count):
             entry = struct.unpack_from(fmt, data, 8 + i * entry_size)
             offset, size = entry[2:4]
             if offset + size > len(data) or data[offset:offset + 4] not in THIN_MAGIC:
                 raise ValueError("invalid universal Mach-O slice")
-            result.update(dependencies(data[offset:offset + size]))
+            result.extend(macho_slices(data[offset:offset + size]))
         return result
     if magic not in THIN_MAGIC:
         raise ValueError("not a supported Mach-O binary")
@@ -50,26 +51,33 @@ def dependencies(data):
         raise ValueError("invalid Mach-O load commands")
     position = header_size
     result = set()
+    runpaths = set()
     for _ in range(count):
         if position + 8 > end:
             raise ValueError("truncated Mach-O load command")
         command, size = struct.unpack_from(endian + "II", data, position)
         if size < 8 or position + size > end:
             raise ValueError("invalid Mach-O load command size")
-        if command in REQUIRED_DYLIB_COMMANDS:
-            if size < 24:
-                raise ValueError("invalid Mach-O dylib command")
+        if command in REQUIRED_DYLIB_COMMANDS or command == LC_RPATH:
+            minimum = 12 if command == LC_RPATH else 24
+            if size < minimum:
+                raise ValueError("invalid Mach-O string command")
             name_offset = struct.unpack_from(endian + "I", data, position + 8)[0]
-            if name_offset < 24 or name_offset >= size:
-                raise ValueError("invalid Mach-O dylib name")
+            if name_offset < minimum or name_offset >= size:
+                raise ValueError("invalid Mach-O string offset")
             name = data[position + name_offset:position + size]
             if b"\0" not in name:
-                raise ValueError("unterminated Mach-O dylib name")
-            result.add(name.split(b"\0", 1)[0].decode("utf-8"))
+                raise ValueError("unterminated Mach-O string")
+            value = name.split(b"\0", 1)[0].decode("utf-8")
+            (runpaths if command == LC_RPATH else result).add(value)
         position += size
     if position != end:
         raise ValueError("inconsistent Mach-O load command size")
-    return result
+    return [(result, runpaths)]
+
+
+def dependencies(data):
+    return set().union(*(loads for loads, _ in macho_slices(data)))
 
 
 def check_ipa(path):
@@ -95,9 +103,17 @@ def check_ipa(path):
         errors = []
         for binary in binaries:
             try:
-                loads = dependencies(ipa.read(binary))
+                slices = macho_slices(ipa.read(binary))
             except (ValueError, struct.error, UnicodeError) as error:
                 raise ValueError(f"{binary}: {error}") from error
+            if binary == executable:
+                for index, (_, runpaths) in enumerate(slices):
+                    if "@executable_path/Frameworks" not in runpaths:
+                        errors.append(
+                            f"{binary} slice {index + 1} is missing the "
+                            "@executable_path/Frameworks runpath"
+                        )
+            loads = set().union(*(loads for loads, _ in slices))
             for load in sorted(loads):
                 if not load.startswith("@rpath/"):
                     continue

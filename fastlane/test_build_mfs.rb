@@ -95,4 +95,13 @@ class BuildMfsSigningTest < Minitest::Test
       assert_includes settings[1], "MFS_CODE_SIGNING_ALLOWED = NO;"
     end
   end
+
+  def test_app_configurations_search_embedded_frameworks
+    project = File.read(File.join(__dir__, "..", "MFS.xcodeproj", "project.pbxproj"))
+    %w[A1000000000000000000000E A1000000000000000000000F].each do |id|
+      settings = project.match(/#{id} \/\* (?:Debug|Release) \*\/ = \{.*?buildSettings = \{(.*?)\n\s*\};/m)
+      refute_nil settings
+      assert_includes settings[1], 'LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", );'
+    end
+  end
 end

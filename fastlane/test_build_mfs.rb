@@ -104,4 +104,14 @@ class BuildMfsSigningTest < Minitest::Test
       assert_includes settings[1], 'LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", );'
     end
   end
+
+  def test_app_configurations_use_bluetooth_restoration_plist
+    project = File.read(File.join(__dir__, "..", "MFS.xcodeproj", "project.pbxproj"))
+    %w[A1000000000000000000000E A1000000000000000000000F].each do |id|
+      settings = project.match(/#{id} \/\* (?:Debug|Release) \*\/ = \{.*?buildSettings = \{(.*?)\n\s*\};/m)
+      refute_nil settings
+      assert_includes settings[1], "INFOPLIST_FILE = Sources/Info.plist;"
+      assert_includes settings[1], "INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription"
+    end
+  end
 end

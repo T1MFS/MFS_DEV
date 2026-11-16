@@ -44,11 +44,17 @@ jobs:
       - name: Test IPA framework check
         run: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_check_ipa_frameworks.py'
 
+      - name: Test IPA Bluetooth configuration check
+        run: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_check_ipa_bluetooth.py'
+
       - name: Fastlane build and archive
         run: bundle exec fastlane build_mfs
 
       - name: Check packaged framework dependencies
         run: python3 scripts/check_ipa_frameworks.py MFS.ipa
+
+      - name: Check packaged Bluetooth configuration
+        run: python3 scripts/check_ipa_bluetooth.py MFS.ipa
 
       - name: Fastlane upload to TestFlight
         run: bundle exec fastlane release

@@ -11,6 +11,7 @@ jobs:
           submodules: recursive
       - name: Select Xcode version
         run: sudo xcode-select --switch /Applications/Xcode_${{ vars.XCODE_VERSION || '16.4' }}.app/Contents/Developer
+      - run: ruby scripts/test_update_dependencies.rb
       - run: bundle install
       - run: ./scripts/check_no_delivery_commands.sh
       - run: bundle exec fastlane test

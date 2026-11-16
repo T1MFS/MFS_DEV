@@ -1,0 +1,128 @@
+name: Update Dependencies
+on:
+  workflow_dispatch:
+    inputs:
+      loopkit:
+        description: Update LoopKit
+        type: boolean
+        default: false
+      g7sensorkit:
+        description: Update G7SensorKit
+        type: boolean
+        default: false
+      omnipodkit:
+        description: Update OmnipodKit
+        type: boolean
+        default: false
+      rileylinkkit:
+        description: Update RileyLinkKit
+        type: boolean
+        default: false
+      fastlane:
+        description: Update fastlane
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-update-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: macos-15
+    outputs:
+      changed: ${{ steps.update.outputs.changed }}
+      commit: ${{ steps.commit.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Select Xcode version
+        run: sudo xcode-select --switch /Applications/Xcode_${{ vars.XCODE_VERSION || '16.4' }}.app/Contents/Developer
+
+      - name: Update selected dependencies
+        id: update
+        env:
+          UPDATE_LOOPKIT: ${{ inputs.loopkit }}
+          UPDATE_G7SENSORKIT: ${{ inputs.g7sensorkit }}
+          UPDATE_OMNIPODKIT: ${{ inputs.omnipodkit }}
+          UPDATE_RILEYLINKKIT: ${{ inputs.rileylinkkit }}
+          UPDATE_FASTLANE: ${{ inputs.fastlane }}
+        run: |
+          dependencies=()
+          [[ "$UPDATE_LOOPKIT" == true ]] && dependencies+=(LoopKit)
+          [[ "$UPDATE_G7SENSORKIT" == true ]] && dependencies+=(G7SensorKit)
+          [[ "$UPDATE_OMNIPODKIT" == true ]] && dependencies+=(OmnipodKit)
+          [[ "$UPDATE_RILEYLINKKIT" == true ]] && dependencies+=(RileyLinkKit)
+          [[ "$UPDATE_FASTLANE" == true ]] && dependencies+=(fastlane)
+          bash scripts/update_dependencies.sh "${dependencies[@]}"
+          BUNDLE_FROZEN=true bundle install
+          git add -- LoopKit G7SensorKit OmnipodKit RileyLinkKit Gemfile Gemfile.lock
+          if git diff --cached --quiet; then
+            echo "Selected dependencies are already up to date."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit updates
+        id: commit
+        if: steps.update.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update selected dependencies"
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Test updated dependencies
+        if: steps.update.outputs.changed == 'true'
+        run: |
+          bundle exec fastlane test
+          git diff --exit-code HEAD
+
+      - name: Package tested commit
+        if: steps.update.outputs.changed == 'true'
+        env:
+          TESTED_COMMIT: ${{ steps.commit.outputs.commit }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$TESTED_COMMIT"
+          git branch dependency-update "$TESTED_COMMIT"
+          git bundle create "$RUNNER_TEMP/dependency-update.bundle" refs/heads/dependency-update "^$TESTED_COMMIT^"
+
+      - uses: actions/upload-artifact@v4
+        if: steps.update.outputs.changed == 'true'
+        with:
+          name: dependency-update
+          path: ${{ runner.temp }}/dependency-update.bundle
+          if-no-files-found: error
+
+  publish:
+    needs: update
+    if: needs.update.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dependency-update
+
+      - name: Fast-forward default branch
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          TESTED_COMMIT: ${{ needs.update.outputs.commit }}
+        run: |
+          git fetch ./dependency-update.bundle refs/heads/dependency-update
+          test "$(git rev-parse FETCH_HEAD)" = "$TESTED_COMMIT"
+          git push origin "$TESTED_COMMIT:refs/heads/$DEFAULT_BRANCH"

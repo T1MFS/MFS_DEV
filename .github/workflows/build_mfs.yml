@@ -26,7 +26,14 @@ jobs:
           submodules: recursive
 
       - name: Select Xcode version
-        run: sudo xcode-select --switch /Applications/Xcode_${{ vars.XCODE_VERSION || '16.4' }}.app/Contents/Developer
+        run: |
+          sudo xcode-select --switch /Applications/Xcode_${{ vars.XCODE_VERSION || '26.3' }}.app/Contents/Developer
+          xcodebuild -version
+          sdk_version=$(xcrun --sdk iphoneos --show-sdk-version)
+          if [ "${sdk_version%%.*}" -lt 26 ]; then
+            echo "::error::App Store Connect requires the iOS 26 SDK or newer; selected SDK is $sdk_version."
+            exit 1
+          fi
 
       - name: Install Ruby gems
         run: bundle install
@@ -34,8 +41,14 @@ jobs:
       - name: Sync clock
         run: sudo sntp -sS time.windows.com
 
+      - name: Test IPA framework check
+        run: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_check_ipa_frameworks.py'
+
       - name: Fastlane build and archive
         run: bundle exec fastlane build_mfs
+
+      - name: Check packaged framework dependencies
+        run: python3 scripts/check_ipa_frameworks.py MFS.ipa
 
       - name: Fastlane upload to TestFlight
         run: bundle exec fastlane release

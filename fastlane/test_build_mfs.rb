@@ -41,6 +41,23 @@ class FastfileHarness
 end
 
 class BuildMfsSigningTest < Minitest::Test
+  def test_build_number_updates_the_generated_plist_build_setting
+    fastfile = FastfileHarness.new
+    fastfile.run(:build_mfs)
+    increment = fastfile.calls.fetch(:increment_build_number)
+    assert_equal 2, increment[:build_number]
+    assert_equal true, increment[:skip_info_plist]
+
+    project = File.read(File.join(__dir__, "..", "MFS.xcodeproj", "project.pbxproj"))
+    %w[A1000000000000000000000C A1000000000000000000000D].each do |id|
+      settings = project.match(/#{id} \/\* (?:Debug|Release) \*\/ = \{.*?buildSettings = \{(.*?)\n\s*\};/m)
+      refute_nil settings
+      assert_match(/CURRENT_PROJECT_VERSION = \d+;/, settings[1])
+      assert_match(/MARKETING_VERSION = \d+\.\d+(?:\.\d+)?;/, settings[1])
+      assert_includes settings[1], 'VERSIONING_SYSTEM = "apple-generic";'
+    end
+  end
+
   def test_signing_overrides_are_scoped_to_the_app
     fastfile = FastfileHarness.new
     fastfile.run(:build_mfs)

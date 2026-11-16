@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 import AVFoundation
 import Vision
 import UIKit
@@ -9,7 +10,6 @@ private enum MFSSection: String, CaseIterable, Identifiable {
     case manage = "Manage"
     case food = "Food"
     case evaluate = "Evaluate"
-    case carbRatio = "Carb Ratio"
 
     var id: String { rawValue }
 
@@ -18,7 +18,6 @@ private enum MFSSection: String, CaseIterable, Identifiable {
         case .manage: return "slider.horizontal.3"
         case .food: return "fork.knife"
         case .evaluate: return "chart.bar.xaxis"
-        case .carbRatio: return "divide"
         }
     }
 }
@@ -26,10 +25,31 @@ private enum MFSSection: String, CaseIterable, Identifiable {
 @main
 struct MFSApp: App {
     @StateObject private var foodStore = AcceptedFoodStore()
+    @StateObject private var glucoseFeed: GlucoseFeed
+    private let cgmHost: AnyObject?
+    private let fetchGlucose: () -> Void
     @State private var selectedSection: MFSSection = .manage
     @State private var managePath = NavigationPath()
     @State private var foodPath = NavigationPath()
     @State private var evaluatePath = NavigationPath()
+
+    init() {
+        let feed = GlucoseFeed()
+        _glucoseFeed = StateObject(wrappedValue: feed)
+        // Like LoopKit's example host, don't start device managers when hosting XCTest.
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+            cgmHost = nil
+            fetchGlucose = {}
+        } else if MockGlucoseHost.isEnabled {
+            let host = MockGlucoseHost(feed: feed)
+            cgmHost = host
+            fetchGlucose = { host.fetchNewData() }
+        } else {
+            let host = G7GlucoseHost(feed: feed)
+            cgmHost = host
+            fetchGlucose = { host.fetchNewData() }
+        }
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -57,16 +77,12 @@ struct MFSApp: App {
                     Label(MFSSection.evaluate.rawValue, systemImage: MFSSection.evaluate.symbol)
                 }
                 .tag(MFSSection.evaluate)
-
-                NavigationStack {
-                    CarbRatioView()
-                }
-                .tabItem { Label("Carb Ratio", systemImage: "divide") }
-                .tag(MFSSection.carbRatio)
             }
             .tint(Color(red: 0.16, green: 0.39, blue: 0.82))
             .preferredColorScheme(.light)
             .environmentObject(foodStore)
+            .environmentObject(glucoseFeed)
+            .onAppear { fetchGlucose() }
             .onChange(of: foodStore.food?.id) { _, id in
                 guard id != nil else { return }
                 managePath = NavigationPath()
@@ -76,47 +92,65 @@ struct MFSApp: App {
     }
 }
 
-private final class AcceptedFoodStore: ObservableObject {
+final class AcceptedFoodStore: ObservableObject {
     @Published private(set) var food: AcceptedFood?
     @Published private(set) var tidepoolDraft: TidepoolPreparedFood?
+    /// When eating started (or will start). nil means "now", following the latest glucose reading.
+    @Published var mealTime: Date?
 
     func accept(_ food: AcceptedFood) {
+        mealTime = nil
         tidepoolDraft = TidepoolPreparedFood(food: food)
         self.food = food
     }
 }
 
+private func gramsText(_ grams: Double?) -> String {
+    grams.map { "\($0.formatted()) g" } ?? "Unavailable"
+}
+
+struct MacroPieChart: View {
+    let food: AcceptedFood
+    var height: CGFloat = 180
+    var compact = false
+
+    private var slices: [(name: String, grams: Double)] {
+        [("Carbs", food.totalCarbohydrates), ("Protein", food.totalProtein), ("Fat", food.totalFat)]
+            .compactMap { name, grams in grams.map { (name, $0) } }
+            .filter { $0.grams > 0 }
+    }
+
+    var body: some View {
+        if slices.isEmpty {
+            Text("No carbs, protein or fat to chart.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        } else {
+            Chart(slices, id: \.name) { slice in
+                SectorMark(angle: .value("Grams", slice.grams))
+                    .foregroundStyle(by: .value("Nutrient", slice.name))
+            }
+            .chartLegend(compact ? .hidden : .automatic)
+            .frame(width: compact ? height : nil, height: height)
+        }
+    }
+}
+
 private struct ManageView: View {
     @EnvironmentObject private var store: AcceptedFoodStore
-    @AppStorage(CarbRatioSettings.key) private var ratio = CarbRatioSettings.defaultValue
-    @State private var useNet = false
 
     var body: some View {
         List {
+            GlucoseView()
             if let food = store.food {
                 Section("Accepted food") {
                     Text(food.product.name)
                     LabeledContent("Servings", value: food.servings.formatted())
-                    LabeledContent("Total carbs", value: food.totalCarbohydrates.map { "\($0.formatted()) g" } ?? "Unavailable")
-                    LabeledContent("Net carbs", value: food.netCarbohydrates.map { "\($0.formatted()) g" } ?? "Unavailable")
-                }
-                Section("Carbs to use") {
-                    carbOption("Total carbs", net: false)
-                    carbOption("Net carbs", net: true)
-                    Text("Net carbs = total carbs − ½ fiber.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-                Section("Result") {
-                    if let result = food.ratioResult(ratio: ratio, useNet: useNet) {
-                        Text(result.formatted(.number.precision(.fractionLength(0...2))))
-                            .font(.title2.bold())
-                        Text("\(useNet ? "Net" : "Total") carbs ÷ \(ratio.formatted())")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text("Missing nutrition or serving size for this calculation.")
-                            .foregroundStyle(.secondary)
-                    }
+                    MacroPieChart(food: food)
+                    LabeledContent("Total carbs", value: gramsText(food.totalCarbohydrates))
+                    LabeledContent("Net carbs", value: gramsText(food.netCarbohydrates))
+                    LabeledContent("Protein", value: gramsText(food.totalProtein))
+                    LabeledContent("Fat", value: gramsText(food.totalFat))
                 }
                 if let draft = store.tidepoolDraft {
                     Section("Tidepool preparation") {
@@ -133,79 +167,54 @@ private struct ManageView: View {
                 Text("Scan a food and tap Accept to bring it here.")
                     .foregroundStyle(.secondary)
             }
-            Section {
-                LabeledContent("Carb ratio", value: ratio.formatted())
-                Text("Change this in the Carb Ratio tab.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+        }
+        .safeAreaInset(edge: .bottom) {
+            MealDoseFooter(food: store.food)
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button("Connect devices") {}.disabled(true)
+                    Button("Dose formulas") {}.disabled(true)
+                    Button("Safety limits") {}.disabled(true)
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
             }
         }
     }
-
-    private func carbOption(_ title: String, net: Bool) -> some View {
-        Button { useNet = net } label: {
-            HStack {
-                Image(systemName: useNet == net ? "largecircle.fill.circle" : "circle")
-                Text(title)
-                Spacer()
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(useNet == net ? .isSelected : [])
-    }
-
 }
 
-private struct CarbRatioView: View {
-    @AppStorage(CarbRatioSettings.key) private var savedRatio = CarbRatioSettings.defaultValue
-    @State private var entry = ""
-    @State private var saved = false
-    @FocusState private var editing: Bool
-
-    private var parsed: Double? {
-        guard let number = try? Double(entry, format: .number.locale(.current)),
-              number.isFinite, number > 0 else { return nil }
-        return number
-    }
+private struct MealDoseFooter: View {
+    let food: AcceptedFood?
 
     var body: some View {
-        Form {
-            Section("Carb ratio") {
-                HStack {
-                    Text("Ratio")
-                    TextField("30", text: $entry)
-                        .keyboardType(.decimalPad)
-                        .multilineTextAlignment(.trailing)
-                        .focused($editing)
-                        .accessibilityIdentifier("settings.carbRatio")
-                }
-                Text("Default: 30. Your saved value is kept between app launches.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                if !entry.isEmpty && parsed == nil {
-                    Text("Enter a number greater than zero.")
-                        .foregroundStyle(.red)
-                }
-                Button(saved ? "Saved" : "Save ratio") {
-                    guard let parsed, CarbRatioSettings().save(parsed) else { return }
-                    savedRatio = parsed
-                    saved = true
-                    editing = false
-                }
-                .disabled(parsed == nil)
+        Grid(horizontalSpacing: 8, verticalSpacing: 10) {
+            GridRow {
+                cell(gramsText(food?.totalCarbohydrates), "Carbohydrate", "Carbs in the meal (g)")
+                cell(gramsText(food?.totalProtein), "Protein", "Protein in the meal (g)")
+                cell(gramsText(food?.totalFat), "Fat", "Fat in the meal (g)")
+            }
+            Divider()
+            GridRow {
+                cell("—", "Bolus for carbohydrate", "Formula bolus (U)")
+                cell("—", "Bolus for protein", "Formula bolus (U)")
+                cell("—", "Basal", "Current basal rate (U/h)")
             }
         }
-        .navigationTitle("Carb Ratio")
-        .navigationBarTitleDisplayMode(.inline)
-        .onAppear { entry = CarbRatioSettings().value.formatted(.number.grouping(.never)) }
-        .onChange(of: entry) { _, _ in saved = false }
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") { editing = false }
-            }
+        .padding(12)
+        .frame(maxWidth: .infinity)
+        .background(.bar)
+    }
+
+    private func cell(_ value: String, _ title: String, _ definition: String) -> some View {
+        VStack(spacing: 2) {
+            Text(value).font(.title3.bold())
+            Text(title).font(.caption.weight(.semibold))
+            Text(definition).font(.caption2).foregroundStyle(.secondary)
         }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
     }
 }
 

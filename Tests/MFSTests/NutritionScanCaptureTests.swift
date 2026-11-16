@@ -173,24 +173,8 @@ final class PackageServingsTests: XCTestCase {
     }
 }
 
-final class CarbRatioSettingsTests: XCTestCase {
-    func testDefaultPersistenceAndInvalidInput() throws {
-        let suite = "MFS.RatioTests.\(UUID().uuidString)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
-        defer { defaults.removePersistentDomain(forName: suite) }
-        let settings = CarbRatioSettings(defaults: defaults)
-        XCTAssertEqual(settings.value, 30)
-        XCTAssertTrue(settings.save(24.5))
-        XCTAssertEqual(CarbRatioSettings(defaults: defaults).value, 24.5)
-        for invalid in [0.0, -1, Double.nan, Double.infinity] {
-            XCTAssertFalse(settings.save(invalid))
-            XCTAssertEqual(settings.value, 24.5)
-        }
-    }
-}
-
 final class AcceptedFoodTests: XCTestCase {
-    func testSelectedServingsTotalNetRatioAndLocalPreparation() throws {
+    func testSelectedServingsTotalNetAndLocalPreparation() throws {
         let product = OpenFoodFactsProduct(barcode: "123", name: "Snack", brands: nil,
             servingSize: "40 g", nutritionValues: [:],
             nutrientsPer100g: [.carbohydrates: 60, .fiber: 10],
@@ -198,9 +182,6 @@ final class AcceptedFoodTests: XCTestCase {
         let accepted = AcceptedFood(product: product, servings: 2.5)
         XCTAssertEqual(accepted.totalCarbohydrates, 60)
         XCTAssertEqual(accepted.netCarbohydrates, 55)
-        XCTAssertEqual(accepted.ratioResult(ratio: 30, useNet: false), 2)
-        XCTAssertEqual(accepted.ratioResult(ratio: 20, useNet: true), 2.75)
-        XCTAssertNil(accepted.ratioResult(ratio: 0, useNet: false))
         let draft = TidepoolPreparedFood(food: accepted)
         XCTAssertEqual(draft.acceptedFoodID, accepted.id)
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(draft.nutritionJSON)) as? [String: Any])

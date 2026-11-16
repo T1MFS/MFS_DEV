@@ -2,7 +2,7 @@
 
 Project plan (epics, user stories, technical tasks): [docs/](docs/README.md).
 
-A standalone SwiftUI iOS app with sections for **Manage**, **Food**, **Evaluate**, and **Carb Ratio**. The Food Scan screen opens the camera, captures a photo when Scan is tapped, detects a barcode with Apple Vision, and looks up nutrition from the Open Food Facts v3 API. Barcode results show nutrition for one serving and the whole package with an Open Food Facts attribution link.
+A standalone SwiftUI iOS app with sections for **Manage**, **Food**, and **Evaluate**. The Food Scan screen opens the camera, captures a photo when Scan is tapped, detects a barcode with Apple Vision, and looks up nutrition from the Open Food Facts v3 API. Barcode results show nutrition for one serving and the whole package with an Open Food Facts attribution link.
 
 Open `MFS.xcodeproj`, select the MFS scheme, choose an iOS Simulator, and run. The shared `MFSTests` scheme includes a fixture-based scan test using `IMG_0270.HEIC` and a stubbed Open Food Facts response.
 
@@ -34,6 +34,9 @@ The scan screen has an editable Number of servings field. It defaults to the who
 
 ## Accept and Manage
 
-Accept snapshots the scanned product and selected servings, prepares a local Tidepool nutrition fragment, and opens Manage. Manage defaults to total carbs; radio controls choose total or net (total minus half fiber). The displayed result is the selected carbs divided by the saved ratio, without dose units or rounding to a delivery increment. Missing source values show unavailable rather than zero. The Carb Ratio tab defaults to 30, rejects nonpositive/nonfinite values, and saves changes in UserDefaults across launches. Changing the saved ratio updates Manage. Accepted food and its draft currently live only for the app session and the latest acceptance replaces the prior one.
+Accept snapshots the scanned product and selected servings, prepares a local Tidepool nutrition fragment, and opens Manage, which shows name, servings, total and net carbs, protein and fat, with a pie chart of carbs, protein and fat grams. Missing source values show unavailable rather than zero. Accepted food and its draft currently live only for the app session and the latest acceptance replaces the prior one.
+
+The **Manage** tab shows glucose from the hosted Dexcom G7 manager as a line with a trend arrow and a dashed forecast. The forecast is the latest reading held flat plus the output of two `GlucoseInfluence` models (food and dose), both `NoInfluence` for now, so they change nothing. Attach real models through `ForecastContext` and `GlucoseForecaster` in `Sources/GlucoseForecast.swift`. After a food is accepted, a small macro pie chart sits on the line at the latest reading (now). Dragging it moves the meal time in 5-minute steps, earlier for food already eaten or later for a dose before eating; "Reset to now" returns it. The meal time is not yet sent anywhere. A footer shows the meal macros (carbohydrate, protein, fat) and below them the formula bolus for carbohydrate, the formula bolus for protein and the current basal; the bolus and basal values show "—" until the dose formula and pump data are connected. The toolbar menu (connect devices, dose formulas, safety limits) is a disabled placeholder. The Evaluate tab is unchanged.
+
 
 The Tidepool extension boundary prepares nutrition JSON only, with compatibility issues retained beside it. No uploads occur. Volume-based portions remain available to Manage but are not passed as grams to the local mapper. Missing event metadata and schema gaps still apply.

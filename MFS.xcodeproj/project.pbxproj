@@ -26,6 +26,8 @@
 		A10000000000000000000010 /* NutritionScanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000030 /* NutritionScanning.swift */; };
 		A10000000000000000000031 /* NutritionScanning.swift in MFSTests Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000030 /* NutritionScanning.swift */; };
 		A10000000000000000000032 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000033 /* Assets.xcassets */; };
+		A10000000000000000000035 /* SwiftCharts in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000038 /* SwiftCharts */; };
+		A10000000000000000000036 /* SwiftCharts in Embed Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000038 /* SwiftCharts */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,11 +49,11 @@
 /* End PBXFileReference section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		B1000000000000000000300 /* Embed Frameworks */ = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 10; files = (B10000000000000000000201 /* LoopKit.framework in Embed Frameworks */, B10000000000000000000202 /* LoopKitUI.framework in Embed Frameworks */, B10000000000000000000203 /* G7SensorKit.framework in Embed Frameworks */, B10000000000000000000204 /* OmnipodKit.framework in Embed Frameworks */, B10000000000000000000205 /* RileyLinkBLEKit.framework in Embed Frameworks */, B10000000000000000000206 /* RileyLinkKit.framework in Embed Frameworks */, B10000000000000000000207 /* RileyLinkKitUI.framework in Embed Frameworks */, ); name = "Embed Frameworks"; runOnlyForDeploymentPostprocessing = 0; };
+		B1000000000000000000300 /* Embed Frameworks */ = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 10; files = (B10000000000000000000201 /* LoopKit.framework in Embed Frameworks */, B10000000000000000000202 /* LoopKitUI.framework in Embed Frameworks */, B10000000000000000000203 /* G7SensorKit.framework in Embed Frameworks */, B10000000000000000000204 /* OmnipodKit.framework in Embed Frameworks */, B10000000000000000000205 /* RileyLinkBLEKit.framework in Embed Frameworks */, B10000000000000000000206 /* RileyLinkKit.framework in Embed Frameworks */, B10000000000000000000207 /* RileyLinkKitUI.framework in Embed Frameworks */, A10000000000000000000036 /* SwiftCharts in Embed Frameworks */, ); name = "Embed Frameworks"; runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		A10000000000000000000004 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000101 /* LoopKit.framework in Frameworks */, B10000000000000000000102 /* LoopKitUI.framework in Frameworks */, B10000000000000000000103 /* G7SensorKit.framework in Frameworks */, B10000000000000000000104 /* OmnipodKit.framework in Frameworks */, B10000000000000000000105 /* RileyLinkBLEKit.framework in Frameworks */, B10000000000000000000106 /* RileyLinkKit.framework in Frameworks */, B10000000000000000000107 /* RileyLinkKitUI.framework in Frameworks */, ); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000004 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000101 /* LoopKit.framework in Frameworks */, B10000000000000000000102 /* LoopKitUI.framework in Frameworks */, B10000000000000000000103 /* G7SensorKit.framework in Frameworks */, B10000000000000000000104 /* OmnipodKit.framework in Frameworks */, B10000000000000000000105 /* RileyLinkBLEKit.framework in Frameworks */, B10000000000000000000106 /* RileyLinkKit.framework in Frameworks */, B10000000000000000000107 /* RileyLinkKitUI.framework in Frameworks */, A10000000000000000000035 /* SwiftCharts in Frameworks */, ); runOnlyForDeploymentPostprocessing = 0; };
 		A10000000000000000000018 /* MFSTests Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000029 /* XCTest.framework in Frameworks */,); runOnlyForDeploymentPostprocessing = 0; };
 		A10000000000000000000019 /* MFSTests Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000011 /* NutritionScanCaptureTests.swift in Sources */, A10000000000000000000031 /* NutritionScanning.swift in MFSTests Sources */,); runOnlyForDeploymentPostprocessing = 0; };
 		A10000000000000000000020 /* MFSTests Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000012 /* IMG_0270.HEIC in Resources */,); runOnlyForDeploymentPostprocessing = 0; };
@@ -118,6 +120,7 @@
 			buildRules = ();
 			dependencies = ();
 			name = MFS;
+			packageProductDependencies = (A10000000000000000000038 /* SwiftCharts */,);
 			productName = MFS;
 			productReference = A10000000000000000000003 /* MFS.app */;
 			productType = "com.apple.product-type.application";
@@ -141,6 +144,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (en, Base);
 			mainGroup = A10000000000000000000005;
+			packageReferences = (A10000000000000000000037 /* XCRemoteSwiftPackageReference "SwiftCharts" */,);
 			productRefGroup = A10000000000000000000006 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -150,6 +154,22 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A10000000000000000000037 /* XCRemoteSwiftPackageReference "SwiftCharts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ivanschuetz/SwiftCharts";
+			requirement = {branch = master; kind = branch; };
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A10000000000000000000038 /* SwiftCharts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000037 /* XCRemoteSwiftPackageReference "SwiftCharts" */;
+			productName = SwiftCharts;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 		A10000000000000000000021 /* MFSTests */ = {
 			isa = PBXNativeTarget;

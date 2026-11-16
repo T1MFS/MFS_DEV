@@ -41,8 +41,14 @@ jobs:
       - name: Sync clock
         run: sudo sntp -sS time.windows.com
 
+      - name: Test IPA framework check
+        run: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_check_ipa_frameworks.py'
+
       - name: Fastlane build and archive
         run: bundle exec fastlane build_mfs
+
+      - name: Check packaged framework dependencies
+        run: python3 scripts/check_ipa_frameworks.py MFS.ipa
 
       - name: Fastlane upload to TestFlight
         run: bundle exec fastlane release

@@ -1,5 +1,6 @@
 require "minitest/autorun"
 require "base64"
+require "json"
 require "shellwords"
 
 ENV["TEAMID"] = "TESTTEAM"
@@ -41,6 +42,20 @@ class FastfileHarness
 end
 
 class BuildMfsSigningTest < Minitest::Test
+  def test_app_icon_is_in_the_app_resource_catalog
+    root = File.expand_path("..", __dir__)
+    project = File.read(File.join(root, "MFS.xcodeproj", "project.pbxproj"))
+    assert_includes project, "ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;"
+    assert_includes project, "Assets.xcassets in Resources"
+    catalog = File.join(root, "Sources", "Assets.xcassets", "AppIcon.appiconset")
+    image = JSON.parse(File.read(File.join(catalog, "Contents.json"))).fetch("images").first
+    assert_equal "universal", image.fetch("idiom")
+    png = File.binread(File.join(catalog, image.fetch("filename")), 26)
+    assert_equal "\x89PNG\r\n\x1a\n".b, png[0, 8]
+    assert_equal [1024, 1024], png[16, 8].unpack("NN")
+    assert_equal 2, png.getbyte(25)
+  end
+
   def test_build_number_updates_the_generated_plist_build_setting
     fastfile = FastfileHarness.new
     fastfile.run(:build_mfs)

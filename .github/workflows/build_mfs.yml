@@ -26,7 +26,14 @@ jobs:
           submodules: recursive
 
       - name: Select Xcode version
-        run: sudo xcode-select --switch /Applications/Xcode_${{ vars.XCODE_VERSION || '16.4' }}.app/Contents/Developer
+        run: |
+          sudo xcode-select --switch /Applications/Xcode_${{ vars.XCODE_VERSION || '26.3' }}.app/Contents/Developer
+          xcodebuild -version
+          sdk_version=$(xcrun --sdk iphoneos --show-sdk-version)
+          if [ "${sdk_version%%.*}" -lt 26 ]; then
+            echo "::error::App Store Connect requires the iOS 26 SDK or newer; selected SDK is $sdk_version."
+            exit 1
+          fi
 
       - name: Install Ruby gems
         run: bundle install

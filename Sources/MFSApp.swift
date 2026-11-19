@@ -28,6 +28,7 @@ struct MFSApp: App {
     @StateObject private var glucoseFeed: GlucoseFeed
     private let cgmHost: AnyObject?
     private let fetchGlucose: () -> Void
+    @StateObject private var deviceActions: DeviceActions
     @State private var selectedSection: MFSSection = .manage
     @State private var managePath = NavigationPath()
     @State private var foodPath = NavigationPath()
@@ -36,19 +37,31 @@ struct MFSApp: App {
     init() {
         let feed = GlucoseFeed()
         _glucoseFeed = StateObject(wrappedValue: feed)
+        let sourceName: String
+        var g7Host: G7GlucoseHost?
+        var omnipodReader: OmnipodHistoryReader?
         // Like LoopKit's example host, don't start device managers when hosting XCTest.
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
             cgmHost = nil
             fetchGlucose = {}
+            sourceName = "None"
         } else if MockGlucoseHost.isEnabled {
             let host = MockGlucoseHost(feed: feed)
             cgmHost = host
             fetchGlucose = { host.fetchNewData() }
+            sourceName = "Mock CGM"
         } else {
             let host = G7GlucoseHost(feed: feed)
             cgmHost = host
+            g7Host = host
             fetchGlucose = { host.fetchNewData() }
+            sourceName = "Dexcom G7 / Stelo"
         }
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
+            omnipodReader = OmnipodHistoryReader()
+        }
+        let fetch = fetchGlucose
+        _deviceActions = StateObject(wrappedValue: DeviceActions(sourceName: sourceName, g7: g7Host, omnipod: omnipodReader, refreshGlucose: fetch))
     }
 
     var body: some Scene {
@@ -82,6 +95,7 @@ struct MFSApp: App {
             .preferredColorScheme(.light)
             .environmentObject(foodStore)
             .environmentObject(glucoseFeed)
+            .environmentObject(deviceActions)
             .onAppear { fetchGlucose() }
             .onChange(of: foodStore.food?.id) { _, id in
                 guard id != nil else { return }
@@ -138,6 +152,7 @@ struct MacroPieChart: View {
 
 private struct ManageView: View {
     @EnvironmentObject private var store: AcceptedFoodStore
+    @State private var showDevices = false
 
     var body: some View {
         List {
@@ -174,7 +189,7 @@ private struct ManageView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button("Connect devices") {}.disabled(true)
+                    Button("Connect devices") { showDevices = true }
                     Button("Dose formulas") {}.disabled(true)
                     Button("Safety limits") {}.disabled(true)
                 } label: {
@@ -182,6 +197,127 @@ private struct ManageView: View {
                 }
             }
         }
+        .sheet(isPresented: $showDevices) { ConnectDevicesView() }
+    }
+}
+
+/// Lets views trigger a CGM fetch without knowing which host is active.
+final class DeviceActions: ObservableObject {
+    let sourceName: String
+    let refreshGlucose: () -> Void
+    /// nil when the real G7 host is not running (tests, mock CGM).
+    let g7: G7GlucoseHost?
+    let omnipod: OmnipodHistoryReader?
+
+    init(sourceName: String, g7: G7GlucoseHost? = nil, omnipod: OmnipodHistoryReader? = nil, refreshGlucose: @escaping () -> Void) {
+        self.sourceName = sourceName
+        self.g7 = g7
+        self.omnipod = omnipod
+        self.refreshGlucose = refreshGlucose
+    }
+}
+
+private struct ConnectDevicesView: View {
+    @EnvironmentObject private var actions: DeviceActions
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if let g7 = actions.g7 {
+                    G7Section(host: g7, refresh: actions.refreshGlucose)
+                } else {
+                    Section("Dexcom G7") {
+                        LabeledContent("Source", value: actions.sourceName)
+                        Text("Pairing is unavailable with this glucose source.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                if let omnipod = actions.omnipod {
+                    OmnipodSection(reader: omnipod)
+                } else {
+                    Section("Omnipod DASH") {
+                        Text("Unavailable in this build.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .navigationTitle("Connect devices")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            }
+        }
+    }
+}
+
+private struct G7Section: View {
+    @ObservedObject var host: G7GlucoseHost
+    @EnvironmentObject private var feed: GlucoseFeed
+    let refresh: () -> Void
+    @State private var confirmRepair = false
+
+    var body: some View {
+        Section("Dexcom G7 / Stelo") {
+            switch host.pairing {
+            case .notPaired:
+                LabeledContent("Status", value: "Not paired")
+                instructions
+                Button("Pair a new sensor") { host.startPairing() }
+            case .searching:
+                HStack {
+                    Text("Searching for a sensor")
+                    Spacer()
+                    ProgressView()
+                }
+                instructions
+                Button("Search again") { host.startPairing() }
+            case let .paired(name, lifecycle):
+                LabeledContent("Sensor", value: isStelo(name) ? "Dexcom Stelo (\(name))" : name)
+                if isStelo(name) {
+                    Text("Stelo does not send glucose alerts through MFS; use the Stelo app for alerts.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                LabeledContent("Status", value: statusText(lifecycle))
+                if let expires = host.sensorExpiresAt {
+                    LabeledContent("Expires", value: expires.formatted(date: .abbreviated, time: .shortened))
+                }
+                if let latest = feed.readings.last {
+                    LabeledContent("Last reading") {
+                        Text("\(Int(latest.milligramsPerDeciliter.rounded())) mg/dL, \(latest.date.formatted(date: .omitted, time: .shortened))")
+                    }
+                }
+                Button("Check for new readings", action: refresh)
+                Button("Pair a different sensor", role: .destructive) { confirmRepair = true }
+            }
+        }
+        .confirmationDialog("Forget this sensor and search for a new one?", isPresented: $confirmRepair, titleVisibility: .visible) {
+            Button("Forget and search", role: .destructive) { host.startPairing() }
+        }
+    }
+
+    private func isStelo(_ name: String) -> Bool { name.hasPrefix("DX01") }
+
+    private var instructions: some View {
+        Text("Keep Bluetooth on and this phone next to the sensor. Start a new G7, ONE+ or Stelo sensor; it is picked up automatically when it begins advertising, so no code is needed. Close the Dexcom app first if it is running so it does not take the sensor.")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+    }
+
+    private func statusText(_ lifecycle: G7SensorLifecycleState) -> String {
+        let base: String
+        switch lifecycle {
+        case .searching: base = "Searching"
+        case .warmup: base = "Warming up"
+        case .ok: base = "Active"
+        case .failed: base = "Sensor failed"
+        case .gracePeriod: base = "Grace period"
+        case .expired: base = "Expired"
+        }
+        return host.isConnected ? base + ", connected" : base
     }
 }
 

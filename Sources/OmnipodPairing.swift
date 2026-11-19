@@ -125,7 +125,7 @@ struct OmnipodFlowView: UIViewControllerRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(onFinish: onFinish) }
 
     func makeUIViewController(context: Context) -> UIViewController {
-        let flow: PumpManagerViewController
+        var flow: PumpManagerViewController
         switch mode {
         case .setup(let settings):
             let result = OmniPumpManager.setupViewController(

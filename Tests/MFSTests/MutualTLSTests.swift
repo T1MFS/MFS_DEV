@@ -19,18 +19,31 @@ private final class StubProtocol: URLProtocol {
 
 final class MutualTLSTests: XCTestCase {
     private let record: [String: Any] = ["type": "cbg", "time": "2024-10-07T12:34:56Z", "value": 121]
+    private let statusBody = Data(#"{"mode":"mtls-required","upload_enabled":true,"client":{"presented":true,"authorized":true,"common_name":"mfs-client"}}"#.utf8)
 
-    private func client(base: String = "https://digitalme.example:8443/") -> DigitalMeUploadClient {
+    private func connection(base: String = "https://digitalme.example:8443/") -> ServiceConnection {
+        var connection = ServiceConnection(name: "DigitalMe", baseURL: base, auth: .mutualTLS)
+        connection.identityLabel = "MFS.mtls.test"
+        return connection
+    }
+
+    private func client(_ connection: ServiceConnection? = nil) -> DigitalMeUploadClient {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [StubProtocol.self]
-        return DigitalMeUploadClient(
-            connection: ServiceConnection(name: "DigitalMe", baseURL: base, auth: .mutualTLS),
-            session: URLSession(configuration: configuration))
+        return DigitalMeUploadClient(connection: connection ?? self.connection(), session: URLSession(configuration: configuration))
+    }
+
+    private func stub(upload: Int = 201, status: Int = 200) {
+        let body = statusBody
+        StubProtocol.handler = { request in
+            if request.url?.path == "/security/status" { return (status, body) }
+            return (upload, Data(#"{"inserted_count":1}"#.utf8))
+        }
     }
 
     func testUploadURLAppendsPath() {
         XCTAssertEqual(client().uploadURL?.absoluteString, "https://digitalme.example:8443/data/upload")
-        XCTAssertNil(client(base: "http://digitalme.example").uploadURL)
+        XCTAssertNil(client(connection(base: "http://digitalme.example")).uploadURL)
     }
 
     func testNeverUploadsWithoutConfirmation() async {
@@ -53,17 +66,51 @@ final class MutualTLSTests: XCTestCase {
         }
     }
 
-    func testSuccessReturnsInsertedCount() async throws {
-        StubProtocol.handler = { _ in (201, Data(#"{"inserted_count":1}"#.utf8)) }
-        let count = try await client().upload(records: [record], userConfirmed: true)
-        XCTAssertEqual(count, 1)
+    func testSuccessChecksSecurityFirstAndReturnsSnapshot() async throws {
+        stub()
+        let result = try await client().upload(records: [record], userConfirmed: true)
+        XCTAssertEqual(result.inserted, 1)
+        XCTAssertEqual(result.snapshot.level, .mtls)
+        XCTAssertEqual(result.change, .first)
         XCTAssertEqual(StubProtocol.lastRequest?.httpMethod, "POST")
         XCTAssertEqual(StubProtocol.lastRequest?.url?.path, "/data/upload")
     }
 
+    func testRefusesToUploadBelowRequiredSecurity() async {
+        StubProtocol.handler = { _ in (200, Data(#"{"mode":"tls","client":{"presented":false,"authorized":false}}"#.utf8)) }
+        StubProtocol.lastRequest = nil
+        do {
+            _ = try await client().upload(records: [record], userConfirmed: true)
+            XCTFail("expected error")
+        } catch {
+            XCTAssertEqual(error as? DigitalMeUploadError, .securityBelowRequired(actual: .tls, required: .mtls))
+        }
+        XCTAssertNotEqual(StubProtocol.lastRequest?.url?.path, "/data/upload")
+    }
+
+    func testUnacknowledgedDowngradeBlocksUntilAccepted() async throws {
+        stub()
+        var previous = connection()
+        previous.lastSnapshot = SecuritySnapshot(level: .mtls, serverFingerprint: "aa", serverMode: "mtls-required",
+                                                 clientCommonName: nil, checkedAt: Date())
+        // Delegate-less test sessions report no fingerprint, so weaken the server mode instead.
+        let body = Data(#"{"mode":"mtls-optional","upload_enabled":true,"client":{"presented":true,"authorized":true,"common_name":"mfs-client"}}"#.utf8)
+        StubProtocol.handler = { request in
+            request.url?.path == "/security/status" ? (200, body) : (201, Data(#"{"inserted_count":1}"#.utf8))
+        }
+        do {
+            _ = try await client(previous).upload(records: [record], userConfirmed: true)
+            XCTFail("expected error")
+        } catch {
+            XCTAssertEqual(error as? DigitalMeUploadError, .securityChanged(.serverPolicyWeakened(from: "mtls-required", to: "mtls-optional")))
+        }
+        let accepted = try await client(previous).upload(records: [record], userConfirmed: true, acknowledgedChange: true)
+        XCTAssertEqual(accepted.inserted, 1)
+    }
+
     func testRetryableClassification() async {
         for (status, retryable) in [(401, false), (403, false), (400, false), (503, true), (429, true)] {
-            StubProtocol.handler = { _ in (status, Data()) }
+            stub(upload: status)
             do {
                 _ = try await client().upload(records: [record], userConfirmed: true)
                 XCTFail("expected error")

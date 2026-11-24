@@ -29,6 +29,10 @@ struct ServiceConnection: Identifiable, Codable, Equatable {
     var identityLabel: String?
     /// Keychain label of the private CA certificate that signed the server certificate. Without it, system trust applies.
     var caLabel: String?
+    /// Lowest security level uploads may use. Nil means the default for the auth method; lowering it is a visible, logged choice.
+    var minimumSecurity: SecurityLevel?
+    /// What the last security check observed; used to detect changes.
+    var lastSnapshot: SecuritySnapshot?
     var enabled = true
 
     static func nightscout() -> ServiceConnection {
@@ -38,6 +42,8 @@ struct ServiceConnection: Identifiable, Codable, Equatable {
     static func mutualTLSService() -> ServiceConnection {
         ServiceConnection(name: "", baseURL: "https://", auth: .mutualTLS)
     }
+
+    var requiredSecurity: SecurityLevel { minimumSecurity ?? (auth == .mutualTLS ? .mtls : .tls) }
 
     var issues: [String] {
         var found: [String] = []
@@ -73,9 +79,12 @@ final class ServiceConnectionStore: ObservableObject {
         var connections: [ServiceConnection]
         var healthKinds: [HealthDataKind]
         var healthRequested: Bool
+        var securityEvents: [SecurityEvent]?
     }
 
     @Published private(set) var connections: [ServiceConnection] = []
+    /// Newest last. Capped so the history cannot grow without bound.
+    @Published private(set) var securityEvents: [SecurityEvent] = []
     @Published var healthKinds: Set<HealthDataKind> = Set(HealthDataKind.allCases) { didSet { persist() } }
     /// True once the Apple Health permission sheet has been shown for the chosen kinds.
     @Published private(set) var healthRequested = false
@@ -89,6 +98,7 @@ final class ServiceConnectionStore: ObservableObject {
             connections = saved.connections
             healthKinds = Set(saved.healthKinds)
             healthRequested = saved.healthRequested
+            securityEvents = saved.securityEvents ?? []
         }
     }
 
@@ -106,13 +116,20 @@ final class ServiceConnectionStore: ObservableObject {
         persist()
     }
 
+    func logSecurity(_ messages: [String], for connectionID: UUID, at date: Date = Date()) {
+        guard !messages.isEmpty else { return }
+        securityEvents.append(contentsOf: messages.map { SecurityEvent(date: date, connectionID: connectionID, message: $0) })
+        if securityEvents.count > 200 { securityEvents.removeFirst(securityEvents.count - 200) }
+        persist()
+    }
+
     func markHealthRequested() {
         healthRequested = true
         persist()
     }
 
     private func persist() {
-        let saved = Saved(connections: connections, healthKinds: Array(healthKinds), healthRequested: healthRequested)
+        let saved = Saved(connections: connections, healthKinds: Array(healthKinds), healthRequested: healthRequested, securityEvents: securityEvents)
         defaults.set(try? JSONEncoder().encode(saved), forKey: key)
     }
 }

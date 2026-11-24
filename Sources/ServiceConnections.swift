@@ -27,6 +27,8 @@ struct ServiceConnection: Identifiable, Codable, Equatable {
     var hashSecretSHA1 = false
     /// Keychain label of the imported client identity for mutual TLS.
     var identityLabel: String?
+    /// Keychain label of the private CA certificate that signed the server certificate. Without it, system trust applies.
+    var caLabel: String?
     var enabled = true
 
     static func nightscout() -> ServiceConnection {

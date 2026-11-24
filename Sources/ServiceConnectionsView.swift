@@ -93,6 +93,7 @@ struct ServiceConnectionsView: View {
                             let connection = store.connections[index]
                             ServiceKeychain.deleteSecret(for: connection.id)
                             if let label = connection.identityLabel { ServiceKeychain.deleteIdentity(label: label) }
+                            if let label = connection.caLabel { MutualTLSKeychain.deleteCA(label: label) }
                             store.delete(connection.id)
                         }
                     }
@@ -158,6 +159,7 @@ private struct ServiceConnectionForm: View {
     @State private var secret = ""
     @State private var certificatePassword = ""
     @State private var showImporter = false
+    @State private var importingCA = false
     @State private var importMessage: String?
 
     private var hasSavedSecret: Bool { ServiceKeychain.hasSecret(for: connection.id) }
@@ -191,6 +193,14 @@ private struct ServiceConnectionForm: View {
                         }
                         SecureField("Certificate file password", text: $certificatePassword)
                         Button(connection.identityLabel == nil ? "Import .p12 certificate" : "Replace certificate", systemImage: "doc.badge.plus") {
+                            importingCA = false
+                            showImporter = true
+                        }
+                        if connection.caLabel != nil {
+                            Label("Server CA imported", systemImage: "checkmark.seal").foregroundStyle(.secondary)
+                        }
+                        Button(connection.caLabel == nil ? "Import server CA (.der/.cer)" : "Replace server CA", systemImage: "building.columns") {
+                            importingCA = true
                             showImporter = true
                         }
                         if let importMessage { Text(importMessage).font(.footnote).foregroundStyle(.red) }
@@ -209,8 +219,8 @@ private struct ServiceConnectionForm: View {
                         .disabled(!connection.issues.isEmpty || (needsSecret && secret.isEmpty && !hasSavedSecret))
                 }
             }
-            .fileImporter(isPresented: $showImporter, allowedContentTypes: [.pkcs12]) { result in
-                importCertificate(result)
+            .fileImporter(isPresented: $showImporter, allowedContentTypes: importingCA ? [.x509Certificate] : [.pkcs12]) { result in
+                if importingCA { importCA(result) } else { importCertificate(result) }
             }
         }
     }
@@ -224,6 +234,20 @@ private struct ServiceConnectionForm: View {
             try ServiceKeychain.importIdentity(p12: try Data(contentsOf: url), password: certificatePassword, label: label)
             connection.identityLabel = label
             certificatePassword = ""
+            importMessage = nil
+        } catch {
+            importMessage = error.localizedDescription
+        }
+    }
+
+    private func importCA(_ result: Result<URL, Error>) {
+        guard case .success(let url) = result else { return }
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        do {
+            let label = connection.caLabel ?? "MFS.mtls.ca.\(connection.id.uuidString)"
+            try MutualTLSKeychain.importCA(der: try Data(contentsOf: url), label: label)
+            connection.caLabel = label
             importMessage = nil
         } catch {
             importMessage = error.localizedDescription

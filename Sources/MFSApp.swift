@@ -25,6 +25,9 @@ private enum MFSSection: String, CaseIterable, Identifiable {
 @main
 struct MFSApp: App {
     @StateObject private var foodStore = AcceptedFoodStore()
+    @StateObject private var profileStore = InsulinProfileStore()
+    @StateObject private var serviceStore = ServiceConnectionStore()
+    @StateObject private var formulaStore = DoseFormulaStore()
     @StateObject private var glucoseFeed: GlucoseFeed
     private let cgmHosts: [AnyObject]
     private let fetchGlucose: () -> Void
@@ -99,6 +102,9 @@ struct MFSApp: App {
             .tint(Color(red: 0.16, green: 0.39, blue: 0.82))
             .preferredColorScheme(.light)
             .environmentObject(foodStore)
+            .environmentObject(formulaStore)
+            .environmentObject(profileStore)
+            .environmentObject(serviceStore)
             .environmentObject(glucoseFeed)
             .environmentObject(deviceActions)
             .onAppear { fetchGlucose() }
@@ -112,15 +118,22 @@ struct MFSApp: App {
 }
 
 final class AcceptedFoodStore: ObservableObject {
+    /// The whole accepted record, combined into one food for totals, charts and Tidepool.
     @Published private(set) var food: AcceptedFood?
+    @Published private(set) var meal: AcceptedMeal?
     @Published private(set) var tidepoolDraft: TidepoolPreparedFood?
     /// When eating started (or will start). nil means "now", following the latest glucose reading.
     @Published var mealTime: Date?
 
     func accept(_ food: AcceptedFood) {
+        accept(AcceptedMeal(items: [food]))
+    }
+
+    func accept(_ meal: AcceptedMeal) {
         mealTime = nil
-        tidepoolDraft = TidepoolPreparedFood(food: food)
-        self.food = food
+        tidepoolDraft = TidepoolPreparedFood(food: meal.combined)
+        self.meal = meal
+        food = meal.combined
     }
 }
 
@@ -158,6 +171,9 @@ struct MacroPieChart: View {
 private struct ManageView: View {
     @EnvironmentObject private var store: AcceptedFoodStore
     @State private var showDevices = false
+    @State private var showFormula = false
+    @State private var showProfiles = false
+    @State private var showServices = false
 
     var body: some View {
         List {
@@ -165,7 +181,16 @@ private struct ManageView: View {
             if let food = store.food {
                 Section("Accepted food") {
                     Text(food.product.name)
-                    LabeledContent("Servings", value: food.servings.formatted())
+                    if let data = food.photoJPEG, let image = UIImage(data: data) {
+                        Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 160)
+                    }
+                    if let items = store.meal?.items, items.count > 1 {
+                        ForEach(items) { item in
+                            LabeledContent(item.product.name, value: "\(item.servings.formatted()) × \(gramsText(item.totalCarbohydrates)) carbs")
+                        }
+                    } else {
+                        LabeledContent("Servings", value: food.servings.formatted())
+                    }
                     MacroPieChart(food: food)
                     LabeledContent("Total carbs", value: gramsText(food.totalCarbohydrates))
                     LabeledContent("Net carbs", value: gramsText(food.netCarbohydrates))
@@ -195,7 +220,9 @@ private struct ManageView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button("Connect devices") { showDevices = true }
-                    Button("Dose formulas") {}.disabled(true)
+                    Button("Insulin profiles") { showProfiles = true }
+                    Button("Service connections") { showServices = true }
+                    Button("Dose formulas") { showFormula = true }
                     Button("Safety limits") {}.disabled(true)
                 } label: {
                     Image(systemName: "ellipsis.circle")
@@ -203,6 +230,9 @@ private struct ManageView: View {
             }
         }
         .sheet(isPresented: $showDevices) { ConnectDevicesView() }
+        .sheet(isPresented: $showFormula) { DoseFormulaView() }
+        .sheet(isPresented: $showProfiles) { InsulinProfilesView() }
+        .sheet(isPresented: $showServices) { ServiceConnectionsView() }
     }
 }
 
@@ -446,7 +476,7 @@ private struct FoodSectionView: View {
                         GeometryReader { panel in
                             ZStack {
                                 NavigationLink {
-                                    FoodOptionView(title: "Text", symbol: "text.cursor")
+                                    ManualFoodView()
                                 } label: {
                                     FoodMenuTile(title: "Text", color: Color(red: 0.98, green: 0.66, blue: 0.04), width: tileWidth, height: tileHeight)
                                 }

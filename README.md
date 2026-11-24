@@ -36,7 +36,7 @@ The scan screen has an editable Number of servings field. It defaults to the who
 
 Accept snapshots the scanned product and selected servings, prepares a local Tidepool nutrition fragment, and opens Manage, which shows name, servings, total and net carbs, protein and fat, with a pie chart of carbs, protein and fat grams. Missing source values show unavailable rather than zero. Accepted food and its draft currently live only for the app session and the latest acceptance replaces the prior one.
 
-The **Manage** tab shows glucose from the hosted Dexcom G7 manager or LibreLoop's direct FreeStyle Libre 3 integration as a line with a trend arrow and a dashed forecast. LibreLoop pairs with the sensor over NFC and BLE without using Apple Health or the official Libre app. The toolbar menu has a Connect devices sheet for Dexcom, LibreLoop and Omnipod DASH. Dose formulas and safety limits are still disabled placeholders. The Evaluate tab is unchanged.
+The **Manage** tab shows glucose from the hosted Dexcom G7 manager or LibreLoop's direct FreeStyle Libre 3 integration as a line with a trend arrow and a dashed forecast. LibreLoop pairs with the sensor over NFC and BLE without using Apple Health or the official Libre app. The forecast and meal display remain as documented below. The toolbar menu has a Connect devices sheet for Dexcom, LibreLoop and Omnipod DASH. Dose formulas opens the formula editor; safety limits is still a disabled placeholder. The Evaluate tab is unchanged.
 
 
 The Tidepool extension boundary prepares nutrition JSON only, with compatibility issues retained beside it. No uploads occur. Volume-based portions remain available to Manage but are not passed as grams to the local mapper. Missing event metadata and schema gaps still apply.
@@ -52,3 +52,19 @@ Connect devices can pair a new Omnipod DASH. This is the one exception to MFS be
 ## Connecting devices
 
 Nothing connects on its own. At launch MFS only resumes a G7 sensor that was already paired; with none paired it never scans, so it cannot attach to a nearby stranger's sensor. Pairing starts only when the user taps the pair button in Connect devices, and every device follows the same flow (`DeviceConnection`): check for an existing connection, disconnect it, then start the new one.
+
+## Text food entry
+
+Food > Text is a table: name, carbs and protein (required), fat and fiber (optional), in grams. Use Add row for more foods (swipe to delete). Each row has a Per serving checkbox: unchecked means grams for the whole amount eaten; checked means grams in one serving and the number of servings is required. Accept turns the whole table, with its optional camera photo, into one composite record in Manage; totals, the chart, the formula preview and the Tidepool draft all use the record as a whole (the photo stays on the device).
+
+## Dose formula editor
+
+Manage > menu > Dose formulas edits B(t) = x·c(t) + y·p(t) + z·f(t), the impact on blood glucose t minutes after eating. One row per nutrient: constant (x, y, z, any value), time function (constant, linear rise or decay, logarithmic rise or decay over a span in minutes), and an optional × G(t) multiplier using the glucose level. The carbohydrate row also chooses how fiber counts (total carbs, net with fiber ÷ 2, or net with all fiber). The formula is saved on the device and previewed for the accepted food. It is not yet used for the forecast or the footer's bolus values; the constants start at 0, so nothing is suggested until you set them.
+
+## Insulin profiles and service connections
+
+Manage toolbar menu:
+
+- **Insulin profiles**: one Main profile plus any number of alternatives (for example "Sick"). Each profile has time frames (6am-11am, 11am-4pm, ...), each with basal (units/hour) and sensitivity (mg/dL one unit lowers glucose). Alternatives are selected by hand with Use / Back to main and stay in effect until changed. `ProfileSwitchHook` is the extension point for automatic switching; none are registered, and a manual choice is never overridden by a hook. No default values are supplied.
+- **Service connections**: connection details only, no data format. A service has a name, https address and one of: none, shared secret in a header (Nightscout preset: `api-secret`, optionally SHA-1 hashed), bearer token, or a client certificate for mutual TLS (import a `.p12`). Secrets and certificates are stored in the Keychain.
+- **Apple Health** (read only): pulse rate, sleep and heart rate variability. This needs the HealthKit capability on the App ID and provisioning profile (`Sources/MFS.entitlements`).

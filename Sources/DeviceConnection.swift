@@ -16,4 +16,5 @@ extension DeviceConnection {
 }
 
 extension G7GlucoseHost: DeviceConnection {}
+extension Libre3GlucoseHost: DeviceConnection {}
 extension OmnipodHistoryReader: DeviceConnection {}

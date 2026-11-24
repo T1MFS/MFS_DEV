@@ -6,5 +6,7 @@
 	<array>
 		<string>bluetooth-central</string>
 	</array>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Read glucose values from FreeStyle Libre 3 through HealthKit.</string>
 </dict>
 </plist>

@@ -26,7 +26,7 @@ private enum MFSSection: String, CaseIterable, Identifiable {
 struct MFSApp: App {
     @StateObject private var foodStore = AcceptedFoodStore()
     @StateObject private var glucoseFeed: GlucoseFeed
-    private let cgmHost: AnyObject?
+    private let cgmHosts: [AnyObject]
     private let fetchGlucose: () -> Void
     @StateObject private var deviceActions: DeviceActions
     @State private var selectedSection: MFSSection = .manage
@@ -42,26 +42,31 @@ struct MFSApp: App {
         var omnipodReader: OmnipodHistoryReader?
         // Like LoopKit's example host, don't start device managers when hosting XCTest.
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
-            cgmHost = nil
+            cgmHosts = []
             fetchGlucose = {}
             sourceName = "None"
         } else if MockGlucoseHost.isEnabled {
             let host = MockGlucoseHost(feed: feed)
-            cgmHost = host
+            cgmHosts = [host]
             fetchGlucose = { host.fetchNewData() }
             sourceName = "Mock CGM"
         } else {
             let host = G7GlucoseHost(feed: feed)
-            cgmHost = host
+            let libreHost = Libre3GlucoseHost(feed: feed)
+            cgmHosts = [host, libreHost]
             g7Host = host
-            fetchGlucose = { host.fetchNewData() }
-            sourceName = "Dexcom G7 / Stelo"
+            fetchGlucose = {
+                host.fetchNewData()
+                libreHost.fetchNewData()
+            }
+            sourceName = "Dexcom G7 / Stelo / FreeStyle Libre 3"
         }
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
             omnipodReader = OmnipodHistoryReader()
         }
         let fetch = fetchGlucose
-        _deviceActions = StateObject(wrappedValue: DeviceActions(sourceName: sourceName, g7: g7Host, omnipod: omnipodReader, refreshGlucose: fetch))
+        let libreHost = cgmHosts.compactMap { $0 as? Libre3GlucoseHost }.first
+        _deviceActions = StateObject(wrappedValue: DeviceActions(sourceName: sourceName, g7: g7Host, libre3: libreHost, omnipod: omnipodReader, refreshGlucose: fetch))
     }
 
     var body: some Scene {
@@ -207,11 +212,13 @@ final class DeviceActions: ObservableObject {
     let refreshGlucose: () -> Void
     /// nil when the real G7 host is not running (tests, mock CGM).
     let g7: G7GlucoseHost?
+    let libre3: Libre3GlucoseHost?
     let omnipod: OmnipodHistoryReader?
 
-    init(sourceName: String, g7: G7GlucoseHost? = nil, omnipod: OmnipodHistoryReader? = nil, refreshGlucose: @escaping () -> Void) {
+    init(sourceName: String, g7: G7GlucoseHost? = nil, libre3: Libre3GlucoseHost? = nil, omnipod: OmnipodHistoryReader? = nil, refreshGlucose: @escaping () -> Void) {
         self.sourceName = sourceName
         self.g7 = g7
+        self.libre3 = libre3
         self.omnipod = omnipod
         self.refreshGlucose = refreshGlucose
     }
@@ -234,6 +241,9 @@ private struct ConnectDevicesView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                if let libre3 = actions.libre3 {
+                    Libre3Section(host: libre3, refresh: actions.refreshGlucose)
+                }
                 if let omnipod = actions.omnipod {
                     OmnipodSection(reader: omnipod)
                 } else {
@@ -248,6 +258,31 @@ private struct ConnectDevicesView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            }
+        }
+    }
+}
+
+private struct Libre3Section: View {
+    @ObservedObject var host: Libre3GlucoseHost
+    let refresh: () -> Void
+
+    var body: some View {
+        Section("FreeStyle Libre 3") {
+            if host.isEnabled {
+                LabeledContent("Status", value: "Connected through HealthKit")
+                Button("Check for new readings", action: refresh)
+                Button("Disconnect", role: .destructive) { host.disconnect() }
+            } else {
+                Text("Use the official FreeStyle Libre 3 app to connect your sensor and write glucose data to HealthKit.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                if host.authorizationDenied {
+                    Text("HealthKit access was not granted. Enable Blood Glucose access for MFS in Settings.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                Button("Connect FreeStyle Libre 3") { host.connectNew() }
             }
         }
     }

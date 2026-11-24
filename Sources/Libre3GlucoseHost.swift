@@ -1,86 +1,75 @@
 import Foundation
-import HealthKit
+import LibreLoop
 
-/// Read-only FreeStyle Libre 3 integration through the glucose samples written by
-/// the official Libre app to HealthKit.
-final class Libre3GlucoseHost: NSObject, ObservableObject, DeviceConnection {
+/// Hosts LibreLoop's direct BLE FreeStyle Libre 3/3+ CGM manager.
+final class Libre3GlucoseHost: CGMHostBase, ObservableObject, DeviceConnection {
     @Published private(set) var isEnabled = false
-    @Published private(set) var authorizationDenied = false
+    @Published private(set) var pairingInProgress = false
+    @Published private(set) var pairingError: String?
+    private let store: DeviceStateStore
+    private(set) var manager: LibreLoopCGMManager
 
-    private let healthStore = HKHealthStore()
-    private let feed: GlucoseFeed
-    private let glucoseType = HKObjectType.quantityType(forIdentifier: .bloodGlucose)!
-    private var observerQuery: HKObserverQuery?
-    private var latestDate: Date?
-
-    init(feed: GlucoseFeed) {
-        self.feed = feed
-        super.init()
+    init(feed: GlucoseFeed, store: DeviceStateStore = DeviceStateStore(key: "MFS.LibreLoop.rawState")) {
+        self.store = store
+        if let rawState = store.load(), let restored = LibreLoopCGMManager(rawState: rawState) {
+            manager = restored
+        } else {
+            manager = LibreLoopCGMManager()
+        }
+        super.init(feed: feed, queueLabel: "MFS.Libre3GlucoseHost")
+        manager.cgmManagerDelegate = self
+        manager.delegateQueue = queue
+        store.save(manager.rawState)
+        isEnabled = manager.state.sensorSerial != nil
+        manager.scanner // Start LibreLoop's restoration/reconnect listener.
     }
 
     var hasConnectedDevice: Bool { isEnabled }
 
     func disconnect() {
-        if let observerQuery {
-            healthStore.stop(observerQuery)
-        }
-        observerQuery = nil
+        manager.discardSensor()
         isEnabled = false
     }
 
     func beginPairing() {
-        guard HKHealthStore.isHealthDataAvailable() else { return }
-        healthStore.requestAuthorization(toShare: [], read: [glucoseType]) { [weak self] success, error in
-            DispatchQueue.main.async {
-                guard let self else { return }
-                self.authorizationDenied = !success || error != nil
-                guard success else { return }
-                self.isEnabled = true
-                self.startObserving()
-                self.fetchNewData()
+        guard !pairingInProgress else { return }
+        pairingInProgress = true
+        pairingError = nil
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let service = LibreLoopPairingService()
+                let outcome = try await service.pair(
+                    mode: .fresh,
+                    scanner: manager.scanner,
+                    onNFCResponse: { [manager] response in
+                        manager.applyNFCResponse(response)
+                    }
+                )
+                try manager.applyPairingOutcome(outcome)
+                store.save(manager.rawState)
+                isEnabled = true
+            } catch {
+                pairingError = String(describing: error)
             }
+            pairingInProgress = false
         }
     }
 
     func fetchNewData() {
-        guard isEnabled else { return }
-        let start = latestDate ?? Date().addingTimeInterval(-24 * 60 * 60)
-        let predicate = HKQuery.predicateForSamples(withStart: start, end: nil, options: .strictStartDate)
-        let query = HKSampleQuery(
-            sampleType: glucoseType,
-            predicate: predicate,
-            limit: HKObjectQueryNoLimit,
-            sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
-        ) { [weak self] _, samples, _ in
-            guard let self else { return }
-            let unit = HKUnit.gramUnit(with: .milli).unitDivided(by: .literUnit(with: .deci))
-            let readings = (samples as? [HKQuantitySample] ?? [])
-                .filter { self.isLibreSource($0.sourceRevision.source.name) }
-                .map {
-                    GlucoseReading(
-                        date: $0.startDate,
-                        milligramsPerDeciliter: $0.quantity.doubleValue(for: unit)
-                    )
-                }
-            guard !readings.isEmpty else { return }
-            self.latestDate = readings.map(\.date).max()
-            DispatchQueue.main.async { self.feed.merge(readings) }
-        }
-        healthStore.execute(query)
+        manager.scanner
     }
 
-    private func startObserving() {
-        guard observerQuery == nil else { return }
-        let query = HKObserverQuery(sampleType: glucoseType, predicate: nil) { [weak self] _, completion, _ in
-            self?.fetchNewData()
-            completion()
-        }
-        observerQuery = query
-        healthStore.execute(query)
+    override func handle(_ result: CGMReadingResult) {
+        super.handle(result)
+        store.save(manager.rawState)
     }
 
-    private func isLibreSource(_ name: String) -> Bool {
-        let source = name.localizedLowercase
-        return source.contains("libre") || source.contains("freestyle")
+    override func stateDidChange(_ manager: CGMManager) {
+        store.save(manager.rawState)
+    }
+
+    override func wantsDeletion(_ manager: CGMManager) {
+        store.clear()
     }
 }

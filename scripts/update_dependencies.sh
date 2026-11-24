@@ -8,7 +8,7 @@ fi
 
 for dependency in "$@"; do
   case "$dependency" in
-    LoopKit|G7SensorKit|OmnipodKit|RileyLinkKit)
+    LoopKit|G7SensorKit|LibreLoop|OmnipodKit|RileyLinkKit)
       git -C "$dependency" fetch origin HEAD
       git -C "$dependency" checkout --detach FETCH_HEAD
       git -C "$dependency" submodule update --init --recursive

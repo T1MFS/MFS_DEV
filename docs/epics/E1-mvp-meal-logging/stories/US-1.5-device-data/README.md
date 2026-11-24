@@ -5,7 +5,8 @@
 **Status:** In progress. LoopKit, G7SensorKit, OmnipodKit and RileyLinkKit are pinned submodules, linked into the MFS target, and build in CI.
 
 Read-only access to glucose and pod history. No insulin commands. FreeStyle Libre 3
-readings are imported from HealthKit after the official Libre app writes them there.
+LibreLoop pairs directly with the sensor using NFC and Bluetooth; Apple Health and
+the official Libre app are not used.
 
 ## Tasks
 - [T-1.5.1 Read glucose from a Dexcom G7](tasks/T-1.5.1-read-g7-glucose.md)

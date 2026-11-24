@@ -270,19 +270,21 @@ private struct Libre3Section: View {
     var body: some View {
         Section("FreeStyle Libre 3") {
             if host.isEnabled {
-                LabeledContent("Status", value: "Connected through HealthKit")
+                LabeledContent("Status", value: "Connected directly through LibreLoop")
                 Button("Check for new readings", action: refresh)
                 Button("Disconnect", role: .destructive) { host.disconnect() }
             } else {
-                Text("Use the official FreeStyle Libre 3 app to connect your sensor and write glucose data to HealthKit.")
+                Text("LibreLoop pairs directly with a FreeStyle Libre 3 sensor over NFC and Bluetooth.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                if host.authorizationDenied {
-                    Text("HealthKit access was not granted. Enable Blood Glucose access for MFS in Settings.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                if host.pairingInProgress {
+                    ProgressView("Hold the phone to the sensor")
+                } else {
+                    Button("Start direct LibreLoop pairing") { host.connectNew() }
                 }
-                Button("Connect FreeStyle Libre 3") { host.connectNew() }
+                if let error = host.pairingError {
+                    Text(error).font(.footnote).foregroundStyle(.secondary)
+                }
             }
         }
     }

@@ -4,6 +4,9 @@
 	classes = {};
 	objectVersion = 56;
 	objects = {
+		C10000000000000000000004 /* PBXContainerItemProxy */ = {isa = PBXContainerItemProxy; containerPortal = 6EA55B95763FC7115DCF7354 /* LibreLoop project */; proxyType = 2; remoteGlobalIDString = 361FF19D20420C889BD440BB; remoteInfo = LibreLoop; };
+		C10000000000000000000006 /* LibreLoop target dependency */ = {isa = PBXTargetDependency; targetProxy = C10000000000000000000004 /* PBXContainerItemProxy */; };
+		C10000000000000000000007 /* LibreLoop Products */ = {isa = PBXGroup; children = (); name = Products; path = LibreLoop/LibreLoop.xcodeproj; sourceTree = "<group>"; };
 
 /* Begin PBXBuildFile section */
 		B10000000000000000000101 /* LoopKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* LoopKit.framework */; };
@@ -40,6 +43,8 @@
 		A10000000000000000000061 /* CGMHostBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000058 /* CGMHostBase.swift */; };
 		A10000000000000000000062 /* MockGlucoseHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000059 /* MockGlucoseHost.swift */; };
 		A10000000000000000000063 /* Libre3GlucoseHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000064 /* Libre3GlucoseHost.swift */; };
+		C10000000000000000000001 /* LibreLoop.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C10000000000000000000003 /* LibreLoop.framework */; };
+		C10000000000000000000002 /* LibreLoop.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C10000000000000000000003 /* LibreLoop.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		B10000000000000000000108 /* MockKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008 /* MockKit.framework */; };
 		B10000000000000000000208 /* MockKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008 /* MockKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		B10000000000000000000109 /* LoopTestingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000009 /* LoopTestingKit.framework */; };
@@ -77,18 +82,19 @@
 		A10000000000000000000058 /* CGMHostBase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/CGMHostBase.swift; sourceTree = "<group>"; };
 		A10000000000000000000059 /* MockGlucoseHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MockGlucoseHost.swift; sourceTree = "<group>"; };
 		A10000000000000000000064 /* Libre3GlucoseHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Libre3GlucoseHost.swift; sourceTree = "<group>"; };
-		A10000000000000000000065 /* MFS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MFS.entitlements; sourceTree = "<group>"; };
+		C10000000000000000000003 /* LibreLoop.framework */ = {isa = PBXReferenceProxy; fileType = wrapper.framework; path = LibreLoop.framework; remoteRef = C10000000000000000000004 /* PBXContainerItemProxy */; sourceTree = BUILT_PRODUCTS_DIR; };
+		C10000000000000000000005 /* LibreLoop.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = wrapper.pb-project; path = LibreLoop/LibreLoop.xcodeproj; sourceTree = "<group>"; };
 		B10000000000000000000008 /* MockKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MockKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000009 /* LoopTestingKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = LoopTestingKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000033 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Sources/Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		B1000000000000000000300 /* Embed Frameworks */ = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 10; files = (B10000000000000000000201 /* LoopKit.framework in Embed Frameworks */, B10000000000000000000202 /* LoopKitUI.framework in Embed Frameworks */, B10000000000000000000203 /* G7SensorKit.framework in Embed Frameworks */, B10000000000000000000204 /* OmnipodKit.framework in Embed Frameworks */, B10000000000000000000205 /* RileyLinkBLEKit.framework in Embed Frameworks */, B10000000000000000000206 /* RileyLinkKit.framework in Embed Frameworks */, B10000000000000000000207 /* RileyLinkKitUI.framework in Embed Frameworks */, B10000000000000000000208 /* MockKit.framework in Embed Frameworks */, B10000000000000000000209 /* LoopTestingKit.framework in Embed Frameworks */, A10000000000000000000036 /* SwiftCharts in Embed Frameworks */, ); name = "Embed Frameworks"; runOnlyForDeploymentPostprocessing = 0; };
+		B1000000000000000000300 /* Embed Frameworks */ = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 10; files = (B10000000000000000000201 /* LoopKit.framework in Embed Frameworks */, B10000000000000000000202 /* LoopKitUI.framework in Embed Frameworks */, B10000000000000000000203 /* G7SensorKit.framework in Embed Frameworks */, B10000000000000000000204 /* OmnipodKit.framework in Embed Frameworks */, B10000000000000000000205 /* RileyLinkBLEKit.framework in Embed Frameworks */, B10000000000000000000206 /* RileyLinkKit.framework in Embed Frameworks */, B10000000000000000000207 /* RileyLinkKitUI.framework in Embed Frameworks */, B10000000000000000000208 /* MockKit.framework in Embed Frameworks */, B10000000000000000000209 /* LoopTestingKit.framework in Embed Frameworks */, A10000000000000000000036 /* SwiftCharts in Embed Frameworks */, C10000000000000000000002 /* LibreLoop.framework in Embed Frameworks */, ); name = "Embed Frameworks"; runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		A10000000000000000000004 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000101 /* LoopKit.framework in Frameworks */, B10000000000000000000102 /* LoopKitUI.framework in Frameworks */, B10000000000000000000103 /* G7SensorKit.framework in Frameworks */, B10000000000000000000104 /* OmnipodKit.framework in Frameworks */, B10000000000000000000105 /* RileyLinkBLEKit.framework in Frameworks */, B10000000000000000000106 /* RileyLinkKit.framework in Frameworks */, B10000000000000000000107 /* RileyLinkKitUI.framework in Frameworks */, B10000000000000000000108 /* MockKit.framework in Frameworks */, B10000000000000000000109 /* LoopTestingKit.framework in Frameworks */, A10000000000000000000035 /* SwiftCharts in Frameworks */, ); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000004 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000101 /* LoopKit.framework in Frameworks */, B10000000000000000000102 /* LoopKitUI.framework in Frameworks */, B10000000000000000000103 /* G7SensorKit.framework in Frameworks */, B10000000000000000000104 /* OmnipodKit.framework in Frameworks */, B10000000000000000000105 /* RileyLinkBLEKit.framework in Frameworks */, B10000000000000000000106 /* RileyLinkKit.framework in Frameworks */, B10000000000000000000107 /* RileyLinkKitUI.framework in Frameworks */, B10000000000000000000108 /* MockKit.framework in Frameworks */, B10000000000000000000109 /* LoopTestingKit.framework in Frameworks */, A10000000000000000000035 /* SwiftCharts in Frameworks */, C10000000000000000000001 /* LibreLoop.framework in Frameworks */, ); runOnlyForDeploymentPostprocessing = 0; };
 		A10000000000000000000018 /* MFSTests Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000029 /* XCTest.framework in Frameworks */,); runOnlyForDeploymentPostprocessing = 0; };
 		A10000000000000000000019 /* MFSTests Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000011 /* NutritionScanCaptureTests.swift in Sources */, A10000000000000000000031 /* NutritionScanning.swift in MFSTests Sources */, A10000000000000000000047 /* DeviceStateStore.swift in MFSTests Sources */, A10000000000000000000048 /* DeviceStateStoreTests.swift in Sources */, A10000000000000000000055 /* GlucoseForecast.swift in MFSTests Sources */, A10000000000000000000056 /* GlucoseForecastTests.swift in Sources */,); runOnlyForDeploymentPostprocessing = 0; };
 		A10000000000000000000020 /* MFSTests Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000012 /* IMG_0270.HEIC in Resources */,); runOnlyForDeploymentPostprocessing = 0; };
@@ -109,7 +115,7 @@
 				A10000000000000000000058 /* CGMHostBase.swift */,
 				A10000000000000000000059 /* MockGlucoseHost.swift */,
 				A10000000000000000000064 /* Libre3GlucoseHost.swift */,
-				A10000000000000000000065 /* MFS.entitlements */,
+				C10000000000000000000005 /* LibreLoop.xcodeproj */,
 				A10000000000000000000042 /* OmnipodHistoryReader.swift */,
 				A10000000000000000000073 /* DeviceConnection.swift */,
 				A10000000000000000000071 /* OmnipodPairing.swift */,
@@ -169,7 +175,7 @@
 				B1000000000000000000300 /* Embed Frameworks */,
 			);
 			buildRules = ();
-			dependencies = ();
+			dependencies = (C10000000000000000000006 /* LibreLoop target dependency */,);
 			name = MFS;
 			packageProductDependencies = (A10000000000000000000038 /* SwiftCharts */,);
 			productName = MFS;
@@ -196,6 +202,7 @@
 			knownRegions = (en, Base);
 			mainGroup = A10000000000000000000005;
 			packageReferences = (A10000000000000000000037 /* XCRemoteSwiftPackageReference "SwiftCharts" */,);
+			projectReferences = ({ProductGroup = C10000000000000000000007; ProjectRef = C10000000000000000000005 /* LibreLoop.xcodeproj */; },);
 			productRefGroup = A10000000000000000000006 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -287,7 +294,6 @@
 				ENABLE_TESTABILITY = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/Info.plist;
-				CODE_SIGN_ENTITLEMENTS = MFS.entitlements;
 				INFOPLIST_KEY_CFBundleDisplayName = MFS;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Use the camera to scan food product barcodes.";
@@ -344,7 +350,6 @@
 				CODE_SIGNING_ALLOWED = "$(MFS_CODE_SIGNING_ALLOWED)";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/Info.plist;
-				CODE_SIGN_ENTITLEMENTS = MFS.entitlements;
 				INFOPLIST_KEY_CFBundleDisplayName = MFS;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Use the camera to scan food product barcodes.";

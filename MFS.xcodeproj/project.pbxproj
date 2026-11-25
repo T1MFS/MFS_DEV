@@ -4,8 +4,9 @@
 	classes = {};
 	objectVersion = 56;
 	objects = {
-		C10000000000000000000004 /* PBXContainerItemProxy */ = {isa = PBXContainerItemProxy; containerPortal = C10000000000000000000005 /* LibreLoop.xcodeproj */; proxyType = 2; remoteGlobalIDString = 361FF19D20420C889BD440BB; remoteInfo = LibreLoop; };
-		C10000000000000000000006 /* LibreLoop target dependency */ = {isa = PBXTargetDependency; targetProxy = C10000000000000000000004 /* PBXContainerItemProxy */; };
+		C10000000000000000000004 /* PBXContainerItemProxy */ = {isa = PBXContainerItemProxy; containerPortal = C10000000000000000000005 /* LibreLoop.xcodeproj */; proxyType = 2; remoteGlobalIDString = B556C4EB4504CA4CFCF51EA2; remoteInfo = LibreLoop; };
+		C10000000000000000000008 /* PBXContainerItemProxy */ = {isa = PBXContainerItemProxy; containerPortal = C10000000000000000000005 /* LibreLoop.xcodeproj */; proxyType = 1; remoteGlobalIDString = 361FF19D20420C889BD440BB; remoteInfo = LibreLoop; };
+		C10000000000000000000006 /* LibreLoop target dependency */ = {isa = PBXTargetDependency; name = LibreLoop; targetProxy = C10000000000000000000008 /* PBXContainerItemProxy */; };
 		C10000000000000000000007 /* Products */ = {isa = PBXGroup; children = (C10000000000000000000003 /* LibreLoop.framework */,); name = Products; sourceTree = "<group>"; };
 
 /* Begin PBXBuildFile section */

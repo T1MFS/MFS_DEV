@@ -4,6 +4,9 @@
 	classes = {};
 	objectVersion = 56;
 	objects = {
+		C10000000000000000000004 /* PBXContainerItemProxy */ = {isa = PBXContainerItemProxy; containerPortal = 6EA55B95763FC7115DCF7354 /* LibreLoop project */; proxyType = 2; remoteGlobalIDString = 361FF19D20420C889BD440BB; remoteInfo = LibreLoop; };
+		C10000000000000000000006 /* LibreLoop target dependency */ = {isa = PBXTargetDependency; targetProxy = C10000000000000000000004 /* PBXContainerItemProxy */; };
+		C10000000000000000000007 /* LibreLoop Products */ = {isa = PBXGroup; children = (); name = Products; path = LibreLoop/LibreLoop.xcodeproj; sourceTree = "<group>"; };
 
 /* Begin PBXBuildFile section */
 		A10000000000000000000301 /* Biometrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000300 /* Biometrics.swift */; };
@@ -44,6 +47,7 @@
 		A10000000000000000000044 /* DeviceStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000040 /* DeviceStateStore.swift */; };
 		A10000000000000000000045 /* G7GlucoseHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000041 /* G7GlucoseHost.swift */; };
 		A10000000000000000000070 /* OmnipodPairing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000071 /* OmnipodPairing.swift */; };
+		A10000000000000000000072 /* DeviceConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000073 /* DeviceConnection.swift */; };
 		A10000000000000000000081 /* DoseFormula.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000080 /* DoseFormula.swift */; };
 		A10000000000000000000082 /* DoseFormula.swift in MFSTests Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000080 /* DoseFormula.swift */; };
 		A10000000000000000000084 /* DoseFormulaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000083 /* DoseFormulaView.swift */; };
@@ -63,6 +67,9 @@
 		A10000000000000000000060 /* GlucoseFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000057 /* GlucoseFeed.swift */; };
 		A10000000000000000000061 /* CGMHostBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000058 /* CGMHostBase.swift */; };
 		A10000000000000000000062 /* MockGlucoseHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000059 /* MockGlucoseHost.swift */; };
+		A10000000000000000000063 /* Libre3GlucoseHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000064 /* Libre3GlucoseHost.swift */; };
+		C10000000000000000000001 /* LibreLoop.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C10000000000000000000003 /* LibreLoop.framework */; };
+		C10000000000000000000002 /* LibreLoop.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C10000000000000000000003 /* LibreLoop.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		B10000000000000000000108 /* MockKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008 /* MockKit.framework */; };
 		B10000000000000000000208 /* MockKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008 /* MockKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		B10000000000000000000109 /* LoopTestingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000009 /* LoopTestingKit.framework */; };
@@ -102,6 +109,7 @@
 		A10000000000000000000040 /* DeviceStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/DeviceStateStore.swift; sourceTree = "<group>"; };
 		A10000000000000000000041 /* G7GlucoseHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/G7GlucoseHost.swift; sourceTree = "<group>"; };
 		A10000000000000000000071 /* OmnipodPairing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/OmnipodPairing.swift; sourceTree = "<group>"; };
+		A10000000000000000000073 /* DeviceConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/DeviceConnection.swift; sourceTree = "<group>"; };
 		A10000000000000000000080 /* DoseFormula.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/DoseFormula.swift; sourceTree = "<group>"; };
 		A10000000000000000000083 /* DoseFormulaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/DoseFormulaView.swift; sourceTree = "<group>"; };
 		A10000000000000000000085 /* ManualFoodView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ManualFoodView.swift; sourceTree = "<group>"; };
@@ -117,17 +125,20 @@
 		A10000000000000000000057 /* GlucoseFeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/GlucoseFeed.swift; sourceTree = "<group>"; };
 		A10000000000000000000058 /* CGMHostBase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/CGMHostBase.swift; sourceTree = "<group>"; };
 		A10000000000000000000059 /* MockGlucoseHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MockGlucoseHost.swift; sourceTree = "<group>"; };
+		A10000000000000000000064 /* Libre3GlucoseHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Libre3GlucoseHost.swift; sourceTree = "<group>"; };
+		C10000000000000000000003 /* LibreLoop.framework */ = {isa = PBXReferenceProxy; fileType = wrapper.framework; path = LibreLoop.framework; remoteRef = C10000000000000000000004 /* PBXContainerItemProxy */; sourceTree = BUILT_PRODUCTS_DIR; };
+		C10000000000000000000005 /* LibreLoop.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = wrapper.pb-project; path = LibreLoop/LibreLoop.xcodeproj; sourceTree = "<group>"; };
 		B10000000000000000000008 /* MockKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MockKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000009 /* LoopTestingKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = LoopTestingKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000033 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Sources/Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		B1000000000000000000300 /* Embed Frameworks */ = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 10; files = (B10000000000000000000201 /* LoopKit.framework in Embed Frameworks */, B10000000000000000000202 /* LoopKitUI.framework in Embed Frameworks */, B10000000000000000000203 /* G7SensorKit.framework in Embed Frameworks */, B10000000000000000000204 /* OmnipodKit.framework in Embed Frameworks */, B10000000000000000000205 /* RileyLinkBLEKit.framework in Embed Frameworks */, B10000000000000000000206 /* RileyLinkKit.framework in Embed Frameworks */, B10000000000000000000207 /* RileyLinkKitUI.framework in Embed Frameworks */, B10000000000000000000208 /* MockKit.framework in Embed Frameworks */, B10000000000000000000209 /* LoopTestingKit.framework in Embed Frameworks */, A10000000000000000000036 /* SwiftCharts in Embed Frameworks */, ); name = "Embed Frameworks"; runOnlyForDeploymentPostprocessing = 0; };
+		B1000000000000000000300 /* Embed Frameworks */ = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 10; files = (B10000000000000000000201 /* LoopKit.framework in Embed Frameworks */, B10000000000000000000202 /* LoopKitUI.framework in Embed Frameworks */, B10000000000000000000203 /* G7SensorKit.framework in Embed Frameworks */, B10000000000000000000204 /* OmnipodKit.framework in Embed Frameworks */, B10000000000000000000205 /* RileyLinkBLEKit.framework in Embed Frameworks */, B10000000000000000000206 /* RileyLinkKit.framework in Embed Frameworks */, B10000000000000000000207 /* RileyLinkKitUI.framework in Embed Frameworks */, B10000000000000000000208 /* MockKit.framework in Embed Frameworks */, B10000000000000000000209 /* LoopTestingKit.framework in Embed Frameworks */, A10000000000000000000036 /* SwiftCharts in Embed Frameworks */, C10000000000000000000002 /* LibreLoop.framework in Embed Frameworks */, ); name = "Embed Frameworks"; runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		A10000000000000000000004 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000101 /* LoopKit.framework in Frameworks */, B10000000000000000000102 /* LoopKitUI.framework in Frameworks */, B10000000000000000000103 /* G7SensorKit.framework in Frameworks */, B10000000000000000000104 /* OmnipodKit.framework in Frameworks */, B10000000000000000000105 /* RileyLinkBLEKit.framework in Frameworks */, B10000000000000000000106 /* RileyLinkKit.framework in Frameworks */, B10000000000000000000107 /* RileyLinkKitUI.framework in Frameworks */, B10000000000000000000108 /* MockKit.framework in Frameworks */, B10000000000000000000109 /* LoopTestingKit.framework in Frameworks */, A10000000000000000000035 /* SwiftCharts in Frameworks */, ); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000004 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000101 /* LoopKit.framework in Frameworks */, B10000000000000000000102 /* LoopKitUI.framework in Frameworks */, B10000000000000000000103 /* G7SensorKit.framework in Frameworks */, B10000000000000000000104 /* OmnipodKit.framework in Frameworks */, B10000000000000000000105 /* RileyLinkBLEKit.framework in Frameworks */, B10000000000000000000106 /* RileyLinkKit.framework in Frameworks */, B10000000000000000000107 /* RileyLinkKitUI.framework in Frameworks */, B10000000000000000000108 /* MockKit.framework in Frameworks */, B10000000000000000000109 /* LoopTestingKit.framework in Frameworks */, A10000000000000000000035 /* SwiftCharts in Frameworks */, C10000000000000000000001 /* LibreLoop.framework in Frameworks */, ); runOnlyForDeploymentPostprocessing = 0; };
 		A10000000000000000000018 /* MFSTests Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000029 /* XCTest.framework in Frameworks */,); runOnlyForDeploymentPostprocessing = 0; };
 		A10000000000000000000019 /* MFSTests Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000011 /* NutritionScanCaptureTests.swift in Sources */, A10000000000000000000031 /* NutritionScanning.swift in MFSTests Sources */, A10000000000000000000047 /* DeviceStateStore.swift in MFSTests Sources */, A10000000000000000000048 /* DeviceStateStoreTests.swift in Sources */, A10000000000000000000055 /* GlucoseForecast.swift in MFSTests Sources */, A10000000000000000000056 /* GlucoseForecastTests.swift in Sources */, A10000000000000000000102 /* InsulinProfiles.swift in MFSTests Sources */, A10000000000000000000105 /* ServiceConnections.swift in MFSTests Sources */, A10000000000000000000202 /* MutualTLS.swift in MFSTests Sources */, A10000000000000000000302 /* Biometrics.swift in MFSTests Sources */, A10000000000000000000304 /* BiometricsTests.swift in MFSTests Sources */, A10000000000000000000212 /* ConnectionSecurity.swift in MFSTests Sources */, A10000000000000000000214 /* ConnectionSecurityTests.swift in MFSTests Sources */, A10000000000000000000204 /* MutualTLSTests.swift in MFSTests Sources */, A10000000000000000000110 /* ProfileAndServiceTests.swift in MFSTests Sources */, A10000000000000000000094 /* InsulinTableTests.swift in MFSTests Sources */, A10000000000000000000092 /* InsulinTypes.swift in MFSTests Sources */, A10000000000000000000088 /* DoseFormulaTests.swift in MFSTests Sources */, A10000000000000000000082 /* DoseFormula.swift in MFSTests Sources */,); runOnlyForDeploymentPostprocessing = 0; };
 		A10000000000000000000020 /* MFSTests Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000012 /* IMG_0270.HEIC in Resources */,); runOnlyForDeploymentPostprocessing = 0; };
@@ -147,7 +158,10 @@
 				A10000000000000000000057 /* GlucoseFeed.swift */,
 				A10000000000000000000058 /* CGMHostBase.swift */,
 				A10000000000000000000059 /* MockGlucoseHost.swift */,
+				A10000000000000000000064 /* Libre3GlucoseHost.swift */,
+				C10000000000000000000005 /* LibreLoop.xcodeproj */,
 				A10000000000000000000042 /* OmnipodHistoryReader.swift */,
+				A10000000000000000000073 /* DeviceConnection.swift */,
 				A10000000000000000000090 /* InsulinTypes.swift */,
 				A10000000000000000000085 /* ManualFoodView.swift */,
 				A10000000000000000000083 /* DoseFormulaView.swift */,
@@ -224,7 +238,7 @@
 				B1000000000000000000300 /* Embed Frameworks */,
 			);
 			buildRules = ();
-			dependencies = ();
+			dependencies = (C10000000000000000000006 /* LibreLoop target dependency */,);
 			name = MFS;
 			packageProductDependencies = (A10000000000000000000038 /* SwiftCharts */,);
 			productName = MFS;
@@ -251,6 +265,7 @@
 			knownRegions = (en, Base);
 			mainGroup = A10000000000000000000005;
 			packageReferences = (A10000000000000000000037 /* XCRemoteSwiftPackageReference "SwiftCharts" */,);
+			projectReferences = ({ProductGroup = C10000000000000000000007; ProjectRef = C10000000000000000000005 /* LibreLoop.xcodeproj */; },);
 			productRefGroup = A10000000000000000000006 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -293,7 +308,7 @@
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* Begin PBXSourcesBuildPhase section */
-		A10000000000000000000009 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001 /* MFSApp.swift in Sources */, A10000000000000000000010 /* NutritionScanning.swift in Sources */, A10000000000000000000044 /* DeviceStateStore.swift in Sources */, A10000000000000000000045 /* G7GlucoseHost.swift in Sources */, A10000000000000000000060 /* GlucoseFeed.swift in Sources */, A10000000000000000000061 /* CGMHostBase.swift in Sources */, A10000000000000000000062 /* MockGlucoseHost.swift in Sources */,  A10000000000000000000046 /* OmnipodHistoryReader.swift in Sources */, A10000000000000000000101 /* InsulinProfiles.swift in Sources */, A10000000000000000000104 /* ServiceConnections.swift in Sources */, A10000000000000000000201 /* MutualTLS.swift in Sources */, A10000000000000000000301 /* Biometrics.swift in Sources */, A10000000000000000000303 /* HealthBiometricReader.swift in Sources */, A10000000000000000000211 /* ConnectionSecurity.swift in Sources */, A10000000000000000000107 /* InsulinProfilesView.swift in Sources */, A10000000000000000000109 /* ServiceConnectionsView.swift in Sources */, A10000000000000000000091 /* InsulinTypes.swift in Sources */, A10000000000000000000086 /* ManualFoodView.swift in Sources */, A10000000000000000000084 /* DoseFormulaView.swift in Sources */, A10000000000000000000081 /* DoseFormula.swift in Sources */, A10000000000000000000070 /* OmnipodPairing.swift in Sources */, A10000000000000000000053 /* GlucoseForecast.swift in Sources */, A10000000000000000000054 /* GlucoseView.swift in Sources */,); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000009 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001 /* MFSApp.swift in Sources */, A10000000000000000000010 /* NutritionScanning.swift in Sources */, A10000000000000000000044 /* DeviceStateStore.swift in Sources */, A10000000000000000000045 /* G7GlucoseHost.swift in Sources */, A10000000000000000000060 /* GlucoseFeed.swift in Sources */, A10000000000000000000061 /* CGMHostBase.swift in Sources */, A10000000000000000000062 /* MockGlucoseHost.swift in Sources */, A10000000000000000000063 /* Libre3GlucoseHost.swift in Sources */, A10000000000000000000046 /* OmnipodHistoryReader.swift in Sources */, A10000000000000000000072 /* DeviceConnection.swift in Sources */, A10000000000000000000101 /* InsulinProfiles.swift in Sources */, A10000000000000000000104 /* ServiceConnections.swift in Sources */, A10000000000000000000107 /* InsulinProfilesView.swift in Sources */, A10000000000000000000109 /* ServiceConnectionsView.swift in Sources */, A10000000000000000000091 /* InsulinTypes.swift in Sources */, A10000000000000000000086 /* ManualFoodView.swift in Sources */, A10000000000000000000084 /* DoseFormulaView.swift in Sources */, A10000000000000000000081 /* DoseFormula.swift in Sources */, A10000000000000000000070 /* OmnipodPairing.swift in Sources */, A10000000000000000000053 /* GlucoseForecast.swift in Sources */, A10000000000000000000054 /* GlucoseView.swift in Sources */,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 		A10000000000000000000024 /* PBXContainerItemProxy */ = {

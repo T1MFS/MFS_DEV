@@ -11,6 +11,9 @@
       location = "group:G7SensorKit/G7SensorKit.xcodeproj">
    </FileRef>
    <FileRef
+      location = "group:LibreLoop/LibreLoop.xcodeproj">
+   </FileRef>
+   <FileRef
       location = "group:OmnipodKit/OmnipodKit.xcodeproj">
    </FileRef>
    <FileRef

@@ -29,7 +29,7 @@ struct MFSApp: App {
     @StateObject private var serviceStore = ServiceConnectionStore()
     @StateObject private var formulaStore = DoseFormulaStore()
     @StateObject private var glucoseFeed: GlucoseFeed
-    private let cgmHost: AnyObject?
+    private let cgmHosts: [AnyObject]
     private let fetchGlucose: () -> Void
     @StateObject private var deviceActions: DeviceActions
     @State private var selectedSection: MFSSection = .manage
@@ -45,26 +45,31 @@ struct MFSApp: App {
         var omnipodReader: OmnipodHistoryReader?
         // Like LoopKit's example host, don't start device managers when hosting XCTest.
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
-            cgmHost = nil
+            cgmHosts = []
             fetchGlucose = {}
             sourceName = "None"
         } else if MockGlucoseHost.isEnabled {
             let host = MockGlucoseHost(feed: feed)
-            cgmHost = host
+            cgmHosts = [host]
             fetchGlucose = { host.fetchNewData() }
             sourceName = "Mock CGM"
         } else {
             let host = G7GlucoseHost(feed: feed)
-            cgmHost = host
+            let libreHost = Libre3GlucoseHost(feed: feed)
+            cgmHosts = [host, libreHost]
             g7Host = host
-            fetchGlucose = { host.fetchNewData() }
-            sourceName = "Dexcom G7 / Stelo"
+            fetchGlucose = {
+                host.fetchNewData()
+                libreHost.fetchNewData()
+            }
+            sourceName = "Dexcom G7 / Stelo / FreeStyle Libre 3"
         }
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
             omnipodReader = OmnipodHistoryReader()
         }
         let fetch = fetchGlucose
-        _deviceActions = StateObject(wrappedValue: DeviceActions(sourceName: sourceName, g7: g7Host, omnipod: omnipodReader, refreshGlucose: fetch))
+        let libreHost = cgmHosts.compactMap { $0 as? Libre3GlucoseHost }.first
+        _deviceActions = StateObject(wrappedValue: DeviceActions(sourceName: sourceName, g7: g7Host, libre3: libreHost, omnipod: omnipodReader, refreshGlucose: fetch))
     }
 
     var body: some Scene {
@@ -237,11 +242,13 @@ final class DeviceActions: ObservableObject {
     let refreshGlucose: () -> Void
     /// nil when the real G7 host is not running (tests, mock CGM).
     let g7: G7GlucoseHost?
+    let libre3: Libre3GlucoseHost?
     let omnipod: OmnipodHistoryReader?
 
-    init(sourceName: String, g7: G7GlucoseHost? = nil, omnipod: OmnipodHistoryReader? = nil, refreshGlucose: @escaping () -> Void) {
+    init(sourceName: String, g7: G7GlucoseHost? = nil, libre3: Libre3GlucoseHost? = nil, omnipod: OmnipodHistoryReader? = nil, refreshGlucose: @escaping () -> Void) {
         self.sourceName = sourceName
         self.g7 = g7
+        self.libre3 = libre3
         self.omnipod = omnipod
         self.refreshGlucose = refreshGlucose
     }
@@ -264,6 +271,9 @@ private struct ConnectDevicesView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                if let libre3 = actions.libre3 {
+                    Libre3Section(host: libre3, refresh: actions.refreshGlucose)
+                }
                 if let omnipod = actions.omnipod {
                     OmnipodSection(reader: omnipod)
                 } else {
@@ -283,6 +293,33 @@ private struct ConnectDevicesView: View {
     }
 }
 
+private struct Libre3Section: View {
+    @ObservedObject var host: Libre3GlucoseHost
+    let refresh: () -> Void
+
+    var body: some View {
+        Section("FreeStyle Libre 3") {
+            if host.isEnabled {
+                LabeledContent("Status", value: "Connected directly through LibreLoop")
+                Button("Check for new readings", action: refresh)
+                Button("Disconnect", role: .destructive) { host.disconnect() }
+            } else {
+                Text("LibreLoop pairs directly with a FreeStyle Libre 3 sensor over NFC and Bluetooth.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                if host.pairingInProgress {
+                    ProgressView("Hold the phone to the sensor")
+                } else {
+                    Button("Start direct LibreLoop pairing") { host.connectNew() }
+                }
+                if let error = host.pairingError {
+                    Text(error).font(.footnote).foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+}
+
 private struct G7Section: View {
     @ObservedObject var host: G7GlucoseHost
     @EnvironmentObject private var feed: GlucoseFeed
@@ -295,7 +332,7 @@ private struct G7Section: View {
             case .notPaired:
                 LabeledContent("Status", value: "Not paired")
                 instructions
-                Button("Pair a new sensor") { host.startPairing() }
+                Button("Pair a new sensor") { host.connectNew() }
             case .searching:
                 HStack {
                     Text("Searching for a sensor")
@@ -303,7 +340,7 @@ private struct G7Section: View {
                     ProgressView()
                 }
                 instructions
-                Button("Search again") { host.startPairing() }
+                Button("Search again") { host.connectNew() }
             case let .paired(name, lifecycle):
                 LabeledContent("Sensor", value: isStelo(name) ? "Dexcom Stelo (\(name))" : name)
                 if isStelo(name) {
@@ -325,7 +362,7 @@ private struct G7Section: View {
             }
         }
         .confirmationDialog("Forget this sensor and search for a new one?", isPresented: $confirmRepair, titleVisibility: .visible) {
-            Button("Forget and search", role: .destructive) { host.startPairing() }
+            Button("Forget and search", role: .destructive) { host.connectNew() }
         }
     }
 

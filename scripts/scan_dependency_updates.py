@@ -8,7 +8,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-SUBMODULES = {"LoopKit", "G7SensorKit", "OmnipodKit", "RileyLinkKit"}
+SUBMODULES = {"LoopKit", "G7SensorKit", "LibreLoop", "OmnipodKit", "RileyLinkKit"}
 SOURCE = re.compile(
     r"(?i)(\.(swift|m|mm|h|c|cc|cpp|rb|py|sh|js|ts|jsx|tsx|plist|entitlements|"
     r"pbxproj|xcconfig|yml|yaml|json|xml|html|podspec|gemspec|gradle|kt|java)$|"

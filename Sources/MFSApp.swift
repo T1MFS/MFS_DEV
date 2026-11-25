@@ -255,33 +255,13 @@ final class DeviceActions: ObservableObject {
 }
 
 private struct ConnectDevicesView: View {
-    @EnvironmentObject private var actions: DeviceActions
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             List {
-                if let g7 = actions.g7 {
-                    G7Section(host: g7, refresh: actions.refreshGlucose)
-                } else {
-                    Section("Dexcom G7") {
-                        LabeledContent("Source", value: actions.sourceName)
-                        Text("Pairing is unavailable with this glucose source.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                if let libre3 = actions.libre3 {
-                    Libre3Section(host: libre3, refresh: actions.refreshGlucose)
-                }
-                if let omnipod = actions.omnipod {
-                    OmnipodSection(reader: omnipod)
-                } else {
-                    Section("Omnipod DASH") {
-                        Text("Unavailable in this build.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
+                ForEach(DeviceCategory.allCases) { category in
+                    NavigationLink(category.title) { DeviceListView(category: category) }
                 }
             }
             .navigationTitle("Connect devices")
@@ -293,12 +273,64 @@ private struct ConnectDevicesView: View {
     }
 }
 
+private struct DeviceListView: View {
+    let category: DeviceCategory
+
+    var body: some View {
+        List(DeviceKind.allCases.filter { $0.category == category }) { kind in
+            NavigationLink(kind.title) { DevicePairingView(kind: kind) }
+        }
+        .navigationTitle(category.title)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// One screen per device. Each case owns its guidance and pairing flow, so they can grow independently.
+private struct DevicePairingView: View {
+    @EnvironmentObject private var actions: DeviceActions
+    let kind: DeviceKind
+
+    var body: some View {
+        List {
+            Section("Before you start") {
+                ForEach(kind.guidance, id: \.self) { Text($0).font(.footnote).foregroundStyle(.secondary) }
+            }
+            switch kind {
+            case .dexcomG7:
+                if let g7 = actions.g7 {
+                    G7Section(host: g7, refresh: actions.refreshGlucose)
+                } else {
+                    unavailable("Pairing is unavailable with this glucose source (\(actions.sourceName)).")
+                }
+            case .freestyleLibre3:
+                if let libre3 = actions.libre3 {
+                    Libre3Section(host: libre3, refresh: actions.refreshGlucose)
+                } else {
+                    unavailable("Unavailable in this build.")
+                }
+            case .omnipodDash:
+                if let omnipod = actions.omnipod {
+                    OmnipodSection(reader: omnipod)
+                } else {
+                    unavailable("Unavailable in this build.")
+                }
+            }
+        }
+        .navigationTitle(kind.title)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func unavailable(_ text: String) -> some View {
+        Section { Text(text).font(.footnote).foregroundStyle(.secondary) }
+    }
+}
+
 private struct Libre3Section: View {
     @ObservedObject var host: Libre3GlucoseHost
     let refresh: () -> Void
 
     var body: some View {
-        Section("FreeStyle Libre 3") {
+        Section("Status") {
             if host.isEnabled {
                 LabeledContent("Status", value: "Connected directly through LibreLoop")
                 Button("Check for new readings", action: refresh)
@@ -327,7 +359,7 @@ private struct G7Section: View {
     @State private var confirmRepair = false
 
     var body: some View {
-        Section("Dexcom G7 / Stelo") {
+        Section("Status") {
             switch host.pairing {
             case .notPaired:
                 LabeledContent("Status", value: "Not paired")

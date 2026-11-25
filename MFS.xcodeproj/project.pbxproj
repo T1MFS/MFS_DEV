@@ -347,6 +347,7 @@
 				INFOPLIST_KEY_NSCameraUsageDescription = "Use the camera to scan food product barcodes and photograph meals.";
 				CODE_SIGN_ENTITLEMENTS = Sources/MFS.entitlements;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Read pulse rate, sleep and heart rate variability from Apple Health.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "MFS does not write to Apple Health. This is declared only because bundled libraries include Apple Health write capability, which MFS does not use.";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Use Bluetooth to read glucose from your Dexcom G7 sensor.";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", );
@@ -405,6 +406,7 @@
 				INFOPLIST_KEY_NSCameraUsageDescription = "Use the camera to scan food product barcodes and photograph meals.";
 				CODE_SIGN_ENTITLEMENTS = Sources/MFS.entitlements;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Read pulse rate, sleep and heart rate variability from Apple Health.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "MFS does not write to Apple Health. This is declared only because bundled libraries include Apple Health write capability, which MFS does not use.";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Use Bluetooth to read glucose from your Dexcom G7 sensor.";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", );

@@ -378,6 +378,8 @@ private struct G7Section: View {
         let base: String
         switch lifecycle {
         case .searching: base = "Searching"
+        case .unpaired: base = "Not paired"
+        case .connecting: base = "Connecting"
         case .warmup: base = "Warming up"
         case .ok: base = "Active"
         case .failed: base = "Sensor failed"

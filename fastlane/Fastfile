@@ -117,6 +117,11 @@ platform :ios do
       identifier: APP_ID,
       platform:   "IOS"
     )
+    nfc = Spaceship::ConnectAPI::BundleIdCapability::Type::NFC_TAG_READING
+    unless bundle_id.get_capabilities.any? { |c| c.is_type?(nfc) }
+      bundle_id.create_capability(nfc)
+      UI.message("Enabled NFC Tag Reading")
+    end
     UI.message("Bundle ID ready: #{bundle_id.identifier}")
   end
 
@@ -128,7 +133,8 @@ platform :ios do
 
     match(
       type: "appstore",
-      force: false,
+      # Regenerates the profile so it picks up capabilities enabled on the App ID.
+      force: true,
       verbose: true,
       git_basic_authorization: match_basic_auth,
       app_identifier: [APP_ID]

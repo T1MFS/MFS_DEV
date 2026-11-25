@@ -1,5 +1,6 @@
 import Foundation
 import LibreLoop
+import LoopKit
 
 /// Hosts LibreLoop's direct BLE FreeStyle Libre 3/3+ CGM manager.
 final class Libre3GlucoseHost: CGMHostBase, ObservableObject, DeviceConnection {

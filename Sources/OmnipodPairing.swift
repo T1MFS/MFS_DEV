@@ -45,9 +45,10 @@ struct PodSetupValues {
     }
 }
 
+@MainActor
 final class MFSBluetoothProvider: NSObject, BluetoothProvider, CBCentralManagerDelegate {
     private var central: CBCentralManager?
-    private var observers: [(BluetoothObserver, DispatchQueue)] = []
+    private var observers: [BluetoothObserver] = []
     private var authorizationCompletions: [(BluetoothAuthorization) -> Void] = []
 
     var bluetoothAuthorization: BluetoothAuthorization {
@@ -77,25 +78,29 @@ final class MFSBluetoothProvider: NSObject, BluetoothProvider, CBCentralManagerD
     }
 
     func addBluetoothObserver(_ observer: BluetoothObserver, queue: DispatchQueue) {
-        observers.append((observer, queue))
+        observers.append(observer)
         if central == nil, bluetoothAuthorization == .authorized {
             central = CBCentralManager(delegate: self, queue: .main)
         }
     }
 
     func removeBluetoothObserver(_ observer: BluetoothObserver) {
-        observers.removeAll { $0.0 === observer }
+        observers.removeAll { $0 === observer }
     }
 
-    func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        let authorization = bluetoothAuthorization
-        let state = bluetoothState
-        authorizationCompletions.forEach { $0(authorization) }
-        authorizationCompletions.removeAll()
-        observers.forEach { observer, queue in queue.async { observer.bluetoothDidUpdateState(state) } }
+    // The central manager is created on the main queue, so its callbacks arrive on the main thread.
+    nonisolated func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        MainActor.assumeIsolated {
+            let authorization = bluetoothAuthorization
+            let state = bluetoothState
+            authorizationCompletions.forEach { $0(authorization) }
+            authorizationCompletions.removeAll()
+            observers.forEach { $0.bluetoothDidUpdateState(state) }
+        }
     }
 }
 
+@MainActor
 enum OmnipodSetup {
     static let bluetooth = MFSBluetoothProvider()
 
@@ -105,7 +110,7 @@ enum OmnipodSetup {
         glucoseTintColor: .blue,
         insulinTintColor: .orange,
         loopStatusColorPalette: StateColorPalette(unknown: .gray, normal: .green, warning: .orange, error: .red),
-        chartColorPalette: ChartColorPalette(axisLine: .gray, axisLabel: .darkGray, grid: .lightGray, glucoseTint: .blue, insulinTint: .orange, carbTint: .green)
+        chartColorPalette: ChartColorPalette(axisLine: .gray, axisLabel: .darkGray, grid: .lightGray, presetTint: .purple, glucoseTint: .blue, insulinTint: .orange, carbTint: .green)
     )
 
     static let insulinTypes: [InsulinType] = [.novolog, .humalog, .apidra, .fiasp, .lyumjev]

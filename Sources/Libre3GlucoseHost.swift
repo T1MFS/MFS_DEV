@@ -18,7 +18,6 @@ final class Libre3GlucoseHost: CGMHostBase, ObservableObject, DeviceConnection {
         }
         super.init(feed: feed, queueLabel: "MFS.Libre3GlucoseHost")
         manager.cgmManagerDelegate = self
-        manager.delegateQueue = queue
         store.save(manager.rawState)
         isEnabled = manager.state.sensorSerial != nil
         manager.scanner // Start LibreLoop's restoration/reconnect listener.

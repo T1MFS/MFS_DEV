@@ -12,17 +12,15 @@ final class MockGlucoseHost: CGMHostBase {
 
     init(feed: GlucoseFeed) {
         super.init(feed: feed, queueLabel: "MFS.MockGlucoseHost")
-        let mgPerDl = HKUnit.gramUnit(with: .milli).unitDivided(by: .literUnit(with: .deci))
         manager.dataSource = MockCGMDataSource(
             model: .sineCurve(parameters: (
-                baseGlucose: HKQuantity(unit: mgPerDl, doubleValue: 130),
-                amplitude: HKQuantity(unit: mgPerDl, doubleValue: 40),
+                baseGlucose: LoopQuantity(unit: .milligramsPerDeciliter, doubleValue: 130),
+                amplitude: LoopQuantity(unit: .milligramsPerDeciliter, doubleValue: 40),
                 period: 4 * 3600,
                 referenceDate: Date()
             ))
         )
         manager.cgmManagerDelegate = self
-        manager.delegateQueue = queue
         manager.backfillData(datingBack: 3 * 3600)
     }
 

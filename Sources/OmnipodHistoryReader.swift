@@ -29,7 +29,6 @@ final class OmnipodHistoryReader: NSObject, ObservableObject, PumpManagerDelegat
     @Published private(set) var podSummary: PodSummary?
 
     private let store: DeviceStateStore
-    private let queue = DispatchQueue(label: "MFS.OmnipodHistoryReader")
     @Published private(set) var manager: OmniPumpManager?
 
     /// Without saved state there is no manager until a pod is paired through `OmnipodFlowView`.
@@ -38,7 +37,6 @@ final class OmnipodHistoryReader: NSObject, ObservableObject, PumpManagerDelegat
         super.init()
         if let rawState = store.load(), let restored = OmniPumpManager(rawState: rawState) {
             restored.pumpManagerDelegate = self
-            restored.delegateQueue = queue
             manager = restored
         }
         refreshSummary()
@@ -59,7 +57,6 @@ final class OmnipodHistoryReader: NSObject, ObservableObject, PumpManagerDelegat
     /// Takes over a manager created by OmnipodKit's setup flow.
     func adopt(_ newManager: OmniPumpManager) {
         newManager.pumpManagerDelegate = self
-        newManager.delegateQueue = queue
         store.save(newManager.rawState)
         DispatchQueue.main.async {
             self.manager = newManager
@@ -78,52 +75,54 @@ final class OmnipodHistoryReader: NSObject, ObservableObject, PumpManagerDelegat
 
     // MARK: PumpManagerOnboardingDelegate
 
-    func pumpManagerOnboarding(didCreatePumpManager pumpManager: PumpManagerUI) {
+    @MainActor func pumpManagerOnboarding(didCreatePumpManager pumpManager: PumpManagerUI) {
         if let created = pumpManager as? OmniPumpManager { adopt(created) }
     }
 
-    func pumpManagerOnboarding(didOnboardPumpManager pumpManager: PumpManagerUI) {
+    @MainActor func pumpManagerOnboarding(didOnboardPumpManager pumpManager: PumpManagerUI) {
         if let created = pumpManager as? OmniPumpManager { adopt(created) }
     }
 
-    func pumpManagerOnboarding(didPauseOnboarding pumpManager: PumpManagerUI) {}
+    @MainActor func pumpManagerOnboarding(didPauseOnboarding pumpManager: PumpManagerUI) {}
 
     // MARK: PumpManagerDelegate
 
-    func pumpManager(_ pumpManager: PumpManager, hasNewPumpEvents events: [NewPumpEvent], lastReconciliation: Date?, replacePendingEvents: Bool, completion: @escaping (Error?) -> Void) {
+    func pumpManager(_ pumpManager: PumpManager, hasNewPumpEvents events: [NewPumpEvent], lastReconciliation: Date?, replacePendingEvents: Bool) async throws {
         let new = events.map { HistoryEvent(date: $0.date, title: $0.title) }
-        DispatchQueue.main.async {
+        await MainActor.run {
             let known = Set(self.history)
             self.history = (self.history + new.filter { !known.contains($0) }).sorted { $0.date < $1.date }
         }
-        completion(nil)
     }
 
-    func pumpManager(_ pumpManager: PumpManager, didReadReservoirValue units: Double, at date: Date, completion: @escaping (Result<(newValue: ReservoirValue, lastValue: ReservoirValue?, areStoredValuesContinuous: Bool), Error>) -> Void) {
-        let previous = reservoir
+    func pumpManager(_ pumpManager: PumpManager, didReadReservoirValue units: Double, at date: Date) async throws -> (newValue: ReservoirValue, lastValue: ReservoirValue?, areStoredValuesContinuous: Bool) {
         let value = ReservoirReading(startDate: date, unitVolume: units)
-        DispatchQueue.main.async { self.reservoir = value }
-        completion(.success((newValue: value, lastValue: previous, areStoredValuesContinuous: true)))
+        let previous = await MainActor.run { () -> ReservoirReading? in
+            let previous = self.reservoir
+            self.reservoir = value
+            return previous
+        }
+        return (newValue: value, lastValue: previous, areStoredValuesContinuous: true)
     }
 
-    func pumpManager(_ pumpManager: PumpManager, didError error: PumpManagerError) {
-        DispatchQueue.main.async { self.lastError = error.localizedDescription }
+    func pumpManager(_ pumpManager: PumpManager, didError error: PumpManagerError) async {
+        await MainActor.run { self.lastError = error.localizedDescription }
     }
 
-    func pumpManagerDidUpdateState(_ pumpManager: PumpManager) {
+    func pumpManagerDidUpdateState(_ pumpManager: PumpManager) async {
         store.save(pumpManager.rawState)
-        DispatchQueue.main.async { self.refreshSummary() }
+        await MainActor.run { self.refreshSummary() }
     }
 
-    func pumpManagerWillDeactivate(_ pumpManager: PumpManager) {
+    func pumpManagerWantsDeletion(_ pumpManager: PumpManager) async {
         store.clear()
-        DispatchQueue.main.async {
+        await MainActor.run {
             self.manager = nil
             self.refreshSummary()
         }
     }
 
-    func startDateToFilterNewPumpEvents(for manager: PumpManager) -> Date {
+    func startDateToFilterNewPumpEvents(for manager: PumpManager) async -> Date {
         Date().addingTimeInterval(-24 * 60 * 60)
     }
 
@@ -131,22 +130,24 @@ final class OmnipodHistoryReader: NSObject, ObservableObject, PumpManagerDelegat
 
     var detectedSystemTimeOffset: TimeInterval { 0 }
 
-    var automaticDosingEnabled: Bool { false }
+    @MainActor var automaticDosingEnabled: Bool { false }
 
-    func pumpManagerBLEHeartbeatDidFire(_ pumpManager: PumpManager) {}
+    @MainActor var automatedTreatmentState: AutomatedTreatmentState? { nil }
 
-    func pumpManagerMustProvideBLEHeartbeat(_ pumpManager: PumpManager) -> Bool { false }
+    func pumpManagerBLEHeartbeatDidFire(_ pumpManager: PumpManager) async {}
 
-    func pumpManagerPumpWasReplaced(_ pumpManager: PumpManager) {}
+    func pumpManagerMustProvideBLEHeartbeat(_ pumpManager: PumpManager) async -> Bool { false }
 
-    func pumpManager(_ pumpManager: PumpManager, didUpdatePumpRecordsBasalProfileStartEvents pumpRecordsBasalProfileStartEvents: Bool) {}
+    func pumpManagerPumpWasReplaced(_ pumpManager: PumpManager) async {}
 
-    func pumpManager(_ pumpManager: PumpManager, didAdjustPumpClockBy adjustment: TimeInterval) {}
+    func pumpManager(_ pumpManager: PumpManager, didUpdatePumpRecordsBasalProfileStartEvents pumpRecordsBasalProfileStartEvents: Bool) async {}
+
+    func pumpManager(_ pumpManager: PumpManager, didAdjustPumpClockBy adjustment: TimeInterval) async {}
 
     func pumpManager(_ pumpManager: PumpManager, didUpdate status: PumpManagerStatus, oldStatus: PumpManagerStatus) {}
 
-    func pumpManager(_ pumpManager: PumpManager, didRequestBasalRateScheduleChange basalRateSchedule: BasalRateSchedule, completion: @escaping (Error?) -> Void) {
-        completion(NSError(domain: "MFS.OmnipodHistoryReader", code: 1, userInfo: [NSLocalizedDescriptionKey: "MFS is read-only and does not change pump settings."]))
+    func pumpManager(_ pumpManager: PumpManager, didRequestBasalRateScheduleChange basalRateSchedule: BasalRateSchedule) async throws {
+        throw NSError(domain: "MFS.OmnipodHistoryReader", code: 1, userInfo: [NSLocalizedDescriptionKey: "MFS is read-only and does not change pump settings."])
     }
 
     // MARK: DeviceManagerDelegate
@@ -155,21 +156,15 @@ final class OmnipodHistoryReader: NSObject, ObservableObject, PumpManagerDelegat
         completion?(nil)
     }
 
-    func issueAlert(_ alert: Alert) {}
+    @MainActor func issueAlert(_ alert: Alert) async {}
 
-    func retractAlert(identifier: Alert.Identifier) {}
+    @MainActor func retractAlert(identifier: Alert.Identifier) async {}
 
-    func doesIssuedAlertExist(identifier: Alert.Identifier, completion: @escaping (Swift.Result<Bool, Error>) -> Void) {
-        completion(.success(false))
-    }
+    func doesIssuedAlertExist(identifier: Alert.Identifier) async throws -> Bool { false }
 
-    func lookupAllUnretracted(managerIdentifier: String, completion: @escaping (Swift.Result<[PersistedAlert], Error>) -> Void) {
-        completion(.success([]))
-    }
+    func lookupAllUnretracted(managerIdentifier: String) async throws -> [PersistedAlert] { [] }
 
-    func lookupAllUnacknowledgedUnretracted(managerIdentifier: String, completion: @escaping (Swift.Result<[PersistedAlert], Error>) -> Void) {
-        completion(.success([]))
-    }
+    func lookupAllUnacknowledgedUnretracted(managerIdentifier: String) async throws -> [PersistedAlert] { [] }
 
-    func recordRetractedAlert(_ alert: Alert, at date: Date) {}
+    func recordRetractedAlert(_ alert: Alert, at date: Date) async throws {}
 }

@@ -4,9 +4,9 @@
 	classes = {};
 	objectVersion = 56;
 	objects = {
-		C10000000000000000000004 /* PBXContainerItemProxy */ = {isa = PBXContainerItemProxy; containerPortal = 6EA55B95763FC7115DCF7354 /* LibreLoop project */; proxyType = 2; remoteGlobalIDString = 361FF19D20420C889BD440BB; remoteInfo = LibreLoop; };
+		C10000000000000000000004 /* PBXContainerItemProxy */ = {isa = PBXContainerItemProxy; containerPortal = C10000000000000000000005 /* LibreLoop.xcodeproj */; proxyType = 2; remoteGlobalIDString = 361FF19D20420C889BD440BB; remoteInfo = LibreLoop; };
 		C10000000000000000000006 /* LibreLoop target dependency */ = {isa = PBXTargetDependency; targetProxy = C10000000000000000000004 /* PBXContainerItemProxy */; };
-		C10000000000000000000007 /* LibreLoop Products */ = {isa = PBXGroup; children = (); name = Products; path = LibreLoop/LibreLoop.xcodeproj; sourceTree = "<group>"; };
+		C10000000000000000000007 /* Products */ = {isa = PBXGroup; children = (C10000000000000000000003 /* LibreLoop.framework */,); name = Products; sourceTree = "<group>"; };
 
 /* Begin PBXBuildFile section */
 		A10000000000000000000301 /* Biometrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000300 /* Biometrics.swift */; };

@@ -142,4 +142,18 @@ private final class StubSender: NSObject, URLAuthenticationChallengeSender {
     func use(_ credential: URLCredential, for challenge: URLAuthenticationChallenge) {}
     func continueWithoutCredential(for challenge: URLAuthenticationChallenge) {}
     func cancel(_ challenge: URLAuthenticationChallenge) {}
+
+    func testBiometricsGoToTheirOwnEndpointAndNeverCarryGlucose() async throws {
+        stub()
+        let biometric: [String: Any] = ["type": "biometric", "time": "2024-10-07T12:34:56Z", "metric": "heartRate", "amount": ["value": 72, "units": "bpm"]]
+        _ = try await client().upload(records: [biometric], to: .biometrics, userConfirmed: true)
+        XCTAssertEqual(StubProtocol.lastRequest?.url?.path, "/biometrics/upload")
+
+        do {
+            _ = try await client().upload(records: [record], to: .biometrics, userConfirmed: true)
+            XCTFail("glucose must not be uploaded as a biometric")
+        } catch {
+            XCTAssertEqual(error as? DigitalMeUploadError, .invalidRecord(0))
+        }
+    }
 }

@@ -194,7 +194,30 @@ struct DigitalMeUploadResult: Equatable {
     var change: SecurityChange
 }
 
-/// Sends Tidepool-format records to DigitalMe's `POST /data/upload` over mTLS.
+/// Where DigitalMe accepts a kind of record.
+enum DigitalMeEndpoint {
+    /// Tidepool diabetes data (`cbg`, `bolus`, `food`, ...) at `POST /data/upload`.
+    case data
+    /// Non-glucose body-state measurements (`type: "biometric"`) at `POST /biometrics/upload`.
+    case biometrics
+
+    var path: String {
+        switch self {
+        case .data: return "data/upload"
+        case .biometrics: return "biometrics/upload"
+        }
+    }
+
+    /// Whether a record's `type` belongs on this endpoint. Glucose never goes to biometrics.
+    func accepts(type: String) -> Bool {
+        switch self {
+        case .data: return true
+        case .biometrics: return type == "biometric"
+        }
+    }
+}
+
+/// Sends Tidepool-format records to DigitalMe's `POST /data/upload` (or `/biometrics/upload`) over mTLS.
 /// Never retries on its own: the caller must pass `userConfirmed: true` for every attempt, including retries.
 /// Before sending anything it re-checks the connection's security and refuses to send over a weaker or changed one.
 struct DigitalMeUploadClient {
@@ -206,15 +229,19 @@ struct DigitalMeUploadClient {
         self.session = session ?? MutualTLSSession.make(for: connection)
     }
 
-    var uploadURL: URL? { connection.endpoint("data/upload") }
+    var uploadURL: URL? { url(for: .data) }
+
+    func url(for endpoint: DigitalMeEndpoint) -> URL? { connection.endpoint(endpoint.path) }
 
     @discardableResult
-    func upload(records: [[String: Any]], userConfirmed: Bool, acknowledgedChange: Bool = false) async throws -> DigitalMeUploadResult {
+    func upload(records: [[String: Any]], to endpoint: DigitalMeEndpoint = .data, userConfirmed: Bool, acknowledgedChange: Bool = false) async throws -> DigitalMeUploadResult {
         guard userConfirmed else { throw DigitalMeUploadError.notConfirmed }
-        guard let url = uploadURL else { throw DigitalMeUploadError.invalidConnection }
+        guard let url = url(for: endpoint) else { throw DigitalMeUploadError.invalidConnection }
         guard !records.isEmpty else { throw DigitalMeUploadError.invalidRecord(0) }
-        for (index, record) in records.enumerated() where !(record["type"] is String && record["time"] is String) {
-            throw DigitalMeUploadError.invalidRecord(index)
+        for (index, record) in records.enumerated() {
+            guard let type = record["type"] as? String, record["time"] is String, endpoint.accepts(type: type) else {
+                throw DigitalMeUploadError.invalidRecord(index)
+            }
         }
 
         let report = await ConnectionSecurityChecker(connection: connection, session: session).check()

@@ -21,7 +21,8 @@ final class Libre3GlucoseHost: CGMHostBase, ObservableObject, DeviceConnection {
         manager.cgmManagerDelegate = self
         store.save(manager.rawState)
         isEnabled = manager.state.sensorSerial != nil
-        manager.scanner // Start LibreLoop's restoration/reconnect listener.
+        // Only resume listening for a sensor that was already paired; never scan unprompted.
+        if isEnabled { _ = manager.scanner }
     }
 
     var hasConnectedDevice: Bool { isEnabled }
@@ -57,7 +58,8 @@ final class Libre3GlucoseHost: CGMHostBase, ObservableObject, DeviceConnection {
     }
 
     func fetchNewData() {
-        manager.scanner
+        guard isEnabled else { return }
+        _ = manager.scanner
     }
 
     override func handle(_ result: CGMReadingResult) {

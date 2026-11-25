@@ -19,8 +19,7 @@ class CGMHostBase: NSObject, CGMManagerDelegate {
 
     func handle(_ result: CGMReadingResult) {
         guard case .newData(let samples) = result else { return }
-        let unit = HKUnit.gramUnit(with: .milli).unitDivided(by: .literUnit(with: .deci))
-        let new = samples.map { GlucoseReading(date: $0.date, milligramsPerDeciliter: $0.quantity.doubleValue(for: unit)) }
+        let new = samples.map { GlucoseReading(date: $0.date, milligramsPerDeciliter: $0.quantity.doubleValue(for: .milligramsPerDeciliter)) }
         lock.lock()
         if let newest = new.map(\.date).max() {
             latestDate = max(latestDate ?? newest, newest)
@@ -37,23 +36,23 @@ class CGMHostBase: NSObject, CGMManagerDelegate {
 
     // MARK: CGMManagerDelegate
 
-    func startDateToFilterNewData(for manager: CGMManager) -> Date? {
+    func startDateToFilterNewData(for manager: CGMManager) async -> Date? {
         lock.lock()
         defer { lock.unlock() }
         return latestDate
     }
 
-    func cgmManager(_ manager: CGMManager, hasNew readingResult: CGMReadingResult) {
+    func cgmManager(_ manager: CGMManager, hasNew readingResult: CGMReadingResult) async {
         handle(readingResult)
     }
 
-    func cgmManager(_ manager: CGMManager, hasNew events: [PersistedCgmEvent]) {}
+    func cgmManager(_ manager: CGMManager, hasNew events: [PersistedCgmEvent]) async {}
 
-    func cgmManagerWantsDeletion(_ manager: CGMManager) {
+    func cgmManagerWantsDeletion(_ manager: CGMManager) async {
         wantsDeletion(manager)
     }
 
-    func cgmManagerDidUpdateState(_ manager: CGMManager) {
+    func cgmManagerDidUpdateState(_ manager: CGMManager) async {
         stateDidChange(manager)
     }
 
@@ -71,21 +70,15 @@ class CGMHostBase: NSObject, CGMManagerDelegate {
         completion?(nil)
     }
 
-    func issueAlert(_ alert: Alert) {}
+    @MainActor func issueAlert(_ alert: Alert) async {}
 
-    func retractAlert(identifier: Alert.Identifier) {}
+    @MainActor func retractAlert(identifier: Alert.Identifier) async {}
 
-    func doesIssuedAlertExist(identifier: Alert.Identifier, completion: @escaping (Swift.Result<Bool, Error>) -> Void) {
-        completion(.success(false))
-    }
+    func doesIssuedAlertExist(identifier: Alert.Identifier) async throws -> Bool { false }
 
-    func lookupAllUnretracted(managerIdentifier: String, completion: @escaping (Swift.Result<[PersistedAlert], Error>) -> Void) {
-        completion(.success([]))
-    }
+    func lookupAllUnretracted(managerIdentifier: String) async throws -> [PersistedAlert] { [] }
 
-    func lookupAllUnacknowledgedUnretracted(managerIdentifier: String, completion: @escaping (Swift.Result<[PersistedAlert], Error>) -> Void) {
-        completion(.success([]))
-    }
+    func lookupAllUnacknowledgedUnretracted(managerIdentifier: String) async throws -> [PersistedAlert] { [] }
 
-    func recordRetractedAlert(_ alert: Alert, at date: Date) {}
+    func recordRetractedAlert(_ alert: Alert, at date: Date) async throws {}
 }

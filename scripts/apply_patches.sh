@@ -18,5 +18,5 @@ apply() {
   fi
 }
 
-# Dexcom Stelo advertises as DX01; upstream G7SensorKit only connects to DXCM and DX02.
-apply G7SensorKit G7SensorKit-stelo.patch
+# No patches are currently needed: the pinned G7SensorKit supports Dexcom Stelo (DX01) natively.
+# Add `apply <submodule> <patch file in patches/>` lines here if one becomes necessary.

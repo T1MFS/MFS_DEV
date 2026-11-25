@@ -27,7 +27,6 @@ final class G7GlucoseHost: CGMHostBase, ObservableObject, G7StateObserver {
         }
         super.init(feed: feed, queueLabel: "MFS.G7GlucoseHost")
         manager.cgmManagerDelegate = self
-        manager.delegateQueue = queue
         store.save(manager.rawState)
         manager.addStateObserver(self, queue: .main)
         refreshPairing()

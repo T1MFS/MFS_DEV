@@ -5,6 +5,7 @@ struct DoseFormulaView: View {
     @EnvironmentObject private var formulaStore: DoseFormulaStore
     @EnvironmentObject private var foodStore: AcceptedFoodStore
     @Environment(\.dismiss) private var dismiss
+    @State private var showHelp = false
 
     var body: some View {
         NavigationStack {
@@ -37,7 +38,11 @@ struct DoseFormulaView: View {
             }
             .navigationTitle("Dose formula")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Help") { showHelp = true } }
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            }
+            .sheet(isPresented: $showHelp) { DoseFormulaHelpView() }
         }
     }
 
@@ -60,6 +65,74 @@ struct DoseFormulaView: View {
             }
         } else {
             Text("Accept a food to preview B(t).").font(.footnote).foregroundStyle(.secondary)
+        }
+    }
+}
+
+/// In-app copy of docs/DOSE_FORMULA.md.
+struct DoseFormulaHelpView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                section("What it computes", """
+                B(t) is the modelled impact on blood glucose t minutes after eating, on a one-minute grid from 0 to 720 minutes. It is a hand-shaped toy model, not fitted to data, and is not yet used for the forecast or bolus values.
+                """)
+                section("Inputs", """
+                carbs: carbohydrate grams adjusted by the Fiber setting. Drives the fast component.
+                protein: protein grams. Drives the slow component.
+                fat: fat grams. Adds no glucose; only sets the smear time.
+                Missing amounts count as 0. Fiber: Total carbs uses carbs as entered; Net (fiber ÷ 2) uses max(carbs − fiber/2, 0); Net (all fiber) uses max(carbs − fiber, 0).
+                """)
+                section("The seven factors", """
+                Times (min): t1 fast peak (20), t2 slow hold center (240), σ smear per gram of fat (26.3).
+                Amplitudes: A1 per gram of carbs (1.0), A2 per gram of protein (1.5), C overall scale (0.5).
+                Offset: b baseline (0).
+                Fixed: hold length H = 120 min, edge width w = 60 min.
+                """)
+                section("Total curve", """
+                B(t) = b + C · ( s * [ A1·carbs·g_fast + A2·protein·g_hold ] )(t)
+                * is convolution over minutes.
+                """, mono: true)
+                section("Fast component g_fast", """
+                g_fast(t) = (t / t1²) · e^(−t / t1), t ≥ 0
+                A gamma curve of shape 2 with unit area: two equal exponential steps of t1 minutes in series, so it peaks at t1.
+                """, mono: true)
+                section("Slow component g_hold", """
+                L(x) = 1 / (1 + e^(−x))
+                raw(t) = L((t − t2 + H/2)/w) − L((t − t2 − H/2)/w)
+                g_hold(t) = raw(t) / Σ raw(t')
+                A flat top centered at t2 with hold H and logistic edges of width w, normalized to unit area on the 0…720 grid.
+                """, mono: true)
+                section("Smear s (fat)", """
+                σ_eff = σ × fat grams
+                s(τ) ∝ exp[ −½ ((τ − σ_eff)/σ_eff)² ], τ ≥ 0, normalized to sum 1
+                A Gaussian whose mean delay equals its standard deviation σ_eff, truncated at 6·σ_eff. With no fat there is no smear. Fat moves and flattens the curve but does not change its total area.
+                """, mono: true)
+                section("Landmark conversions", """
+                t1 = T_peak (time to peak)
+                t2 = (T_on + T_off) / 2 and H = T_off − T_on (hold start and end)
+                w = R / (2 ln 9) (R = 10%–90% rise time; 2 ln 9 ≈ 4.394)
+                σ_eff = B90 / (1 + 1.2816) (B90 = time for 90% of the blur; 1.2816 is the normal z-score for 90%)
+                Defaults: T_peak 20; T_on 180, T_off 300; R 263.6 gives w 60; B90 60 gives σ 26.3 (for 1 g of fat).
+                """, mono: true)
+                section("Default curve check", """
+                With 1 g each of carbs, protein and fat: peak 0.0065 at minute 62, dip about 0.0020 at 166, second hump about 0.0029 near 276, effectively 0 by 600.
+                """)
+                section("Limits", """
+                Shapes are hand-chosen and expected to be fitted to data later. Fat affects timing only; person-specific effects of fat on insulin are not modelled. Glucose level does not enter the formula. Results are relative until fitted.
+                """)
+            }
+            .navigationTitle("Dose formula help")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
+    }
+
+    private func section(_ title: String, _ text: String, mono: Bool = false) -> some View {
+        Section(title) {
+            Text(text).font(mono ? .footnote.monospaced() : .footnote)
         }
     }
 }

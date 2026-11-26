@@ -305,6 +305,9 @@ private struct DevicePairingView: View {
             case .freestyleLibre3:
                 if let libre3 = actions.libre3 {
                     Libre3Section(host: libre3, refresh: actions.refreshGlucose)
+                    Section {
+                        NavigationLink("Troubleshooting") { TroubleshootingView(host: libre3) }
+                    }
                 } else {
                     unavailable("Unavailable in this build.")
                 }

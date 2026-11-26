@@ -73,3 +73,7 @@ Manage toolbar menu:
 ## Connect devices layout
 
 Connect devices opens **Sensors** and **Pumps** submenus. Each device (`DeviceKind` in `Sources/DeviceCatalog.swift`) has its own screen with its own guidance and pairing flow (`DevicePairingView`). Libre 3 pairing reads the sensor over NFC, which needs the "NFC Tag Reading" capability on the App ID and in the provisioning profile (`com.apple.developer.nfc.readersession.formats` in `Sources/MFS.entitlements`).
+
+## Troubleshooting
+
+Connect devices > Sensors > FreeStyle Libre 3 > Troubleshooting shows the paired sensor's saved state (pair time, first and latest reading, warm-up), counters for what reached MFS (callbacks, samples received, samples added to the chart, last result), and two logs: MFS's own (`DiagnosticsLog`, every reading result, error, status change and device-log message from the CGM manager) and LibreLoop's. Share report exports everything as text. LibreLoop also keeps a file at Documents/libreloop/log.txt. Every host built on `CGMHostBase` (G7, Libre 3) feeds the MFS log.

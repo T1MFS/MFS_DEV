@@ -14,13 +14,15 @@ enum CarbFiberTreatment: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-/// Toy model two: B(t) = b + C·(s_σ * [A1·g_fast + A2·g_hold])(t), scaled by the net carbohydrate grams.
+/// Toy model two: B(t) = b + C·(s * [A1·carbs·g_fast + A2·protein·g_hold])(t).
+/// Carbohydrate drives the fast component, protein the slow one, and fat only sets the smear time:
+/// the smear width is σ minutes per gram of fat (no fat, no smear). Fat adds no glucose directly.
 /// Seven adjustable factors: three times (t1, t2, σ), three amplitudes (A1, A2, C) and an offset b.
 /// The hold length and edge width are fixed.
 struct DoseFormula: Codable, Equatable {
     var fastPeakMinutes = 20.0
     var slowCenterMinutes = 240.0
-    var smearMinutes = 26.3
+    var smearMinutesPerGramFat = 26.3
     var fastAmplitude = 1.0
     var slowAmplitude = 1.5
     var scale = 0.5
@@ -31,10 +33,11 @@ struct DoseFormula: Codable, Equatable {
     static let edgeWidthMinutes = 60.0
     static let horizonMinutes = 720
 
-    /// Curve per gram of carbohydrate on a one minute grid from 0 through `horizonMinutes`.
-    func curve() -> [Double] {
+    /// Curve on a one minute grid from 0 through `horizonMinutes` for the given grams.
+    func curve(carbohydrate: Double, protein: Double, fat: Double) -> [Double] {
         let n = Self.horizonMinutes + 1
-        let t1 = max(fastPeakMinutes, 0.01), sigma = max(smearMinutes, 0.01)
+        let t1 = max(fastPeakMinutes, 0.01)
+        let sigma = max(smearMinutesPerGramFat * fat, 0)
         let fast = (0..<n).map { Double($0) / (t1 * t1) * exp(-Double($0) / t1) }
         let logistic = { (x: Double) in 1 / (1 + exp(-x)) }
         let hold = (0..<n).map { i -> Double in
@@ -43,8 +46,10 @@ struct DoseFormula: Codable, Equatable {
                 - logistic((t - slowCenterMinutes - Self.holdMinutes / 2) / Self.edgeWidthMinutes)
         }
         let holdArea = hold.reduce(0, +)
-        let base = (0..<n).map { fastAmplitude * fast[$0] + (holdArea > 0 ? slowAmplitude * hold[$0] / holdArea : 0) }
-        let kernel = (0...Int(6 * sigma)).map { exp(-0.5 * pow((Double($0) - sigma) / sigma, 2)) }
+        let base = (0..<n).map {
+            fastAmplitude * carbohydrate * fast[$0] + (holdArea > 0 ? slowAmplitude * protein * hold[$0] / holdArea : 0)
+        }
+        let kernel = sigma < 0.01 ? [1.0] : (0...Int(6 * sigma)).map { exp(-0.5 * pow((Double($0) - sigma) / sigma, 2)) }
         let kernelSum = kernel.reduce(0, +)
         return (0..<n).map { i in
             var acc = 0.0
@@ -63,14 +68,17 @@ struct DoseFormula: Codable, Equatable {
         }
     }
 
-    /// Impact at `minutes` after eating; a missing carbohydrate amount contributes nothing.
-    func impact(carbohydrate c: Double?, fiber: Double?, minutes: Double) -> Double {
-        guard minutes >= 0, minutes <= Double(Self.horizonMinutes),
-              let carbs = carbAmount(total: c, fiber: fiber) else { return 0 }
-        let curve = curve()
+    /// Curve for a food's grams; missing amounts count as 0.
+    func curve(carbohydrate c: Double?, fiber: Double?, protein p: Double?, fat f: Double?) -> [Double] {
+        curve(carbohydrate: carbAmount(total: c, fiber: fiber) ?? 0, protein: p ?? 0, fat: f ?? 0)
+    }
+
+    /// Impact at `minutes` after eating, linearly interpolated between grid minutes.
+    func impact(carbohydrate c: Double?, fiber: Double?, protein p: Double?, fat f: Double?, minutes: Double) -> Double {
+        guard minutes >= 0, minutes <= Double(Self.horizonMinutes) else { return 0 }
+        let curve = curve(carbohydrate: c, fiber: fiber, protein: p, fat: f)
         let lower = Int(minutes), frac = minutes - Double(lower)
-        let y = lower + 1 < curve.count ? curve[lower] * (1 - frac) + curve[lower + 1] * frac : curve[lower]
-        return carbs * y
+        return lower + 1 < curve.count ? curve[lower] * (1 - frac) + curve[lower + 1] * frac : curve[lower]
     }
 }
 

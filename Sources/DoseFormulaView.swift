@@ -10,19 +10,19 @@ struct DoseFormulaView: View {
         NavigationStack {
             Form {
                 Section {
-                    Text("B(t) = b + C·(s_σ * [A1·g_fast + A2·g_hold])(t) × net carbohydrate grams")
+                    Text("B(t) = b + C·(s * [A1·carbs·g_fast + A2·protein·g_hold])(t)")
                         .font(.footnote.monospaced())
-                    Text("B(t) is the impact on blood glucose t minutes after eating. g_fast peaks at t1; g_hold is a flat top centered at t2 (120 min hold, 60 min edge width, both fixed); s_σ smears the result by σ minutes.")
+                    Text("B(t) is the impact on blood glucose t minutes after eating. Carbohydrate (net of fiber, below) drives g_fast, which peaks at t1. Protein drives g_hold, a flat top centered at t2 (120 min hold, 60 min edge width, both fixed). Fat adds no glucose; it only sets the time smear s, whose width is σ minutes per gram of fat.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
                 Section("Times (minutes)") {
                     field("t1  fast peak", $formulaStore.formula.fastPeakMinutes)
                     field("t2  slow hold center", $formulaStore.formula.slowCenterMinutes)
-                    field("σ  smear", $formulaStore.formula.smearMinutes)
+                    field("σ  smear per g fat", $formulaStore.formula.smearMinutesPerGramFat)
                 }
                 Section("Amplitudes") {
-                    field("A1  fast weight", $formulaStore.formula.fastAmplitude)
-                    field("A2  slow weight", $formulaStore.formula.slowAmplitude)
+                    field("A1  carbs (fast)", $formulaStore.formula.fastAmplitude)
+                    field("A2  protein (slow)", $formulaStore.formula.slowAmplitude)
                     field("C  overall scale", $formulaStore.formula.scale)
                 }
                 Section("Offset") {
@@ -52,11 +52,11 @@ struct DoseFormulaView: View {
 
     @ViewBuilder private var preview: some View {
         if let food = foodStore.food {
-            let curve = formulaStore.formula.curve()
+            let curve = formulaStore.formula.curve(carbohydrate: food.totalCarbohydrates, fiber: food.totalFiber,
+                                                   protein: food.totalProtein, fat: food.totalFat)
             Text("For \(food.product.name)").font(.headline)
             ForEach([0.0, 30, 60, 120, 180, 240, 360], id: \.self) { minutes in
-                let value = (formulaStore.formula.carbAmount(total: food.totalCarbohydrates, fiber: food.totalFiber) ?? 0) * curve[Int(minutes)]
-                LabeledContent("t = \(Int(minutes)) min", value: value.formatted(.number.precision(.fractionLength(0...3))))
+                LabeledContent("t = \(Int(minutes)) min", value: curve[Int(minutes)].formatted(.number.precision(.fractionLength(0...3))))
             }
         } else {
             Text("Accept a food to preview B(t).").font(.footnote).foregroundStyle(.secondary)

@@ -59,7 +59,7 @@ Food > Text is a table: name, carbs and protein (required), fat and fiber (optio
 
 ## Dose formula editor
 
-Manage > menu > Dose formulas edits toy model two: B(t) = b + C·(s_σ * [A1·g_fast + A2·g_hold])(t), multiplied by the net carbohydrate grams of the accepted food. Seven factors: three times (t1 fast peak, t2 slow hold center, σ smear, in minutes), three amplitudes (A1, A2, C) and an offset b; the 120 min hold and 60 min edge width are fixed. Defaults (A1 1, A2 1.5, C 0.5, t1 20, t2 240, σ 26.3, b 0) give a fast peak of 0.0065 per gram at 62 min, a dip near 166 and a second hump near 276. The carbohydrate section chooses how fiber counts. Protein and fat are not used in this model. The formula is saved on the device and previewed for the accepted food. It is not yet used for the forecast or the footer's bolus values.
+Manage > menu > Dose formulas edits toy model two: B(t) = b + C·(s * [A1·carbs·g_fast + A2·protein·g_hold])(t). Carbohydrate (net of fiber, chosen in the editor) drives a fast gamma component peaking at t1; protein drives a slow flat-top component centered at t2 (120 min hold and 60 min edge width are fixed); fat adds no glucose and only sets the time smear, whose width is σ minutes per gram of fat (no fat, no smear). Seven factors: three times (t1, t2, σ), three amplitudes (A1, A2, C) and an offset b. Defaults (A1 1, A2 1.5, C 0.5, t1 20, t2 240, σ 26.3, b 0) reproduce the reference curve (peak 0.0065 at 62 min, dip near 166, hump near 276) for 1 g each of carbs, protein and fat. The formula is saved on the device and previewed for the accepted food. It is not yet used for the forecast or the footer's bolus values.
 
 ## Insulin profiles and service connections
 

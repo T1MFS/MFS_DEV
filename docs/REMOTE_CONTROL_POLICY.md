@@ -37,5 +37,6 @@ Open for the owner: the real list and its thresholds ("a laundry list of metrics
 ## Privacy of what is sent
 
 - Biometrics are sent only when the connection verifiably provides encrypted transport with a verified server identity (at least TLS). This floor is set in code (`DigitalMeEndpoint.minimumSecurity`) and cannot be lowered by the connection's own minimum-security setting.
-- Each send re-checks the connection first. If the security is below the floor, has weakened, or the server's certificate changed, the stream pauses and nothing leaves the device until the user reviews and resumes. No data is lost: the next successful send includes the backlog.
-- Transport encryption only. The payload itself is not separately encrypted; DigitalMe reads and stores it in clear. Payload-level encryption is an open decision.
+- Each send re-checks the connection first. If it is below the required level (never below TLS for biometrics), nothing leaves the device and the stream pauses until the user resumes. No data is lost: the next successful send includes the backlog.
+- A connection that still meets the required level is accepted even if it changed (new server certificate, different level or server mode). The change is recorded with its time in the connection's security history (`ServiceConnectionStore.securityEvents`, capped at 200 entries) so it can be audited later.
+- Transport encryption only. The payload itself is not separately encrypted; DigitalMe reads and stores it in clear. Payload-level encryption is accepted as out of scope for now; see `docs/TECHNICAL_DEBT.md`.

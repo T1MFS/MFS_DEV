@@ -59,7 +59,7 @@ Food > Text is a table: name, carbs and protein (required), fat and fiber (optio
 
 ## Dose formula editor
 
-Manage > menu > Dose formulas edits B(t) = x·c(t) + y·p(t) + z·f(t), the impact on blood glucose t minutes after eating. One row per nutrient: constant (x, y, z, any value), time function (constant, linear rise or decay, logarithmic rise or decay over a span in minutes), and an optional × G(t) multiplier using the glucose level. The carbohydrate row also chooses how fiber counts (total carbs, net with fiber ÷ 2, or net with all fiber). The formula is saved on the device and previewed for the accepted food. It is not yet used for the forecast or the footer's bolus values; the constants start at 0, so nothing is suggested until you set them.
+Manage > menu > Dose formulas edits toy model two: B(t) = b + C·(s * [A1·carbs·g_fast + A2·protein·g_hold])(t). Carbohydrate (net of fiber, chosen in the editor) drives a fast gamma component peaking at t1; protein drives a slow flat-top component centered at t2 (120 min hold and 60 min edge width are fixed); fat adds no glucose and only sets the time smear, whose width is σ minutes per gram of fat (no fat, no smear). Seven factors: three times (t1, t2, σ), three amplitudes (A1, A2, C) and an offset b. Defaults (A1 1, A2 1.5, C 0.5, t1 20, t2 240, σ 26.3, b 0) reproduce the reference curve (peak 0.0065 at 62 min, dip near 166, hump near 276) for 1 g each of carbs, protein and fat. The formula is saved on the device and previewed for the accepted food. The editor's Help button opens the full formulas and conversions, also in [docs/DOSE_FORMULA.md](docs/DOSE_FORMULA.md). It is not yet used for the forecast or the footer's bolus values.
 
 ## Insulin profiles and service connections
 

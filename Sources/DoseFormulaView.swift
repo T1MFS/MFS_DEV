@@ -121,14 +121,14 @@ struct DoseFormulaHelpView: View {
                 With 1 g each of carbs, protein and fat: peak 0.0065 at minute 62, dip about 0.0020 at 166, second hump about 0.0029 near 276, effectively 0 by 600.
                 """)
                 section("Insulin action side", """
-                B(t) above is the food side only. The insulin side is stored data, not yet a computed curve, and nothing yet combines the two.
+                B(t) above is the food side only. The insulin side is stored data, not yet a computed model.
                 Insulin profiles (Manage > menu > Insulin profiles): time frames, each with basal (units/hour) and sensitivity (mg/dL one unit lowers glucose). The Main profile or a hand-chosen alternative is active; automatic switching has an extension point but no hooks.
                 Insulin table: population half-life and duration per insulin type (for example rapid-acting about 1 hour half-life, 3–5 hours duration). Reference only; not dosing advice and not used in any calculation.
                 """)
-                section("Intended relationship (not built)", """
-                net effect(t) = B(t) − insulin effect(t)
-                insulin effect(t) = Σ doses: units × sensitivity × action(t − dose time)
-                action is a unit-area insulin action curve that would come from the insulin table. B(t) is in model units per gram until fitted to mg/dL, so the two cannot be summed yet. Still open: the action curve shape, the mg/dL mapping, insulin on board, carbohydrate ratio, bolus calculation and forecast use.
+                section("How the models combine", """
+                The food model and the insulin model are independent; neither is folded into the other. Predicted glucose is their simple sum:
+                predicted glucose(t) = starting glucose + food model(t) + insulin model(t)
+                The insulin term lowers glucose. Any future model would be another independent term. Not built yet: the insulin model and the sum. B(t) is in model units per gram until fitted to mg/dL, so the terms cannot be added meaningfully yet.
                 """, mono: true)
                 section("Limits", """
                 Shapes are hand-chosen and expected to be fitted to data later. Fat affects timing only; person-specific effects of fat on insulin are not modelled. Glucose level does not enter the formula. Results are relative until fitted.

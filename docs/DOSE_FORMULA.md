@@ -94,7 +94,7 @@ With 1 g each of carbs, protein and fat and the defaults, the curve peaks at 0.0
 
 ## Insulin action side
 
-`B(t)` above is only the **food** side. The insulin side currently consists of data the app stores, not a computed curve. **Nothing in the app yet combines the two, and no insulin action curve is implemented.**
+`B(t)` above is only the **food** side. The insulin side currently consists of data the app stores, not a computed curve. **No insulin model is implemented and nothing yet sums the two.**
 
 ### What exists
 
@@ -109,22 +109,23 @@ Rules: at least one time frame, unique start minutes in 0…1439, basal ≥ 0, s
 
 **Insulin pharmacology table** (`Sources/InsulinTypes.swift`). Population approximations per insulin type (rapid lispro/aspart/glulisine, regular, NPH, glargine U-100/U-300, detemir, degludec, inhaled), each with brand names, delivery route, half-life and total duration in hours. For example, rapid-acting insulins list a half-life of about 1 hour and a 3–5 hour duration. This is reference data for future dose and forecast models, is not dosing advice, and is not used in any calculation.
 
-### How the two sides are intended to relate
+### How the models combine
 
-Not implemented; stated so a reviewer can check the intent:
+The food model and the insulin model are **independent**: each has its own inputs and factors, and neither is folded into the other. Predicted glucose is their **simple sum**, and nothing more is attempted for now:
 
 ```
-net glucose effect(t) = food impact B(t)  −  insulin effect(t)
-insulin effect(t)     = Σ over doses  units × ISF(time frame) × insulin action(t − dose time)
+predicted glucose(t) = starting glucose + food model(t) + insulin model(t)
 ```
 
-where `insulin action` would be a unit-area curve over the insulin's duration, chosen from the pharmacology table. Basal would be treated as the dose already offset by the profile's baseline, so only deviations from it matter. The unit mismatch is open: `B(t)` is currently in model units per gram (see Numerics), while the insulin effect is in mg/dL. They cannot be summed until the food side is fitted to mg/dL per gram.
+The insulin model contributes a negative (lowering) term. Any future model (for example heart rate or sleep) would be another independent term added the same way. Not implemented: the app does not yet compute the insulin term or the sum.
+
+The unit mismatch is open: `B(t)` is in model units per gram (see Numerics), while the insulin term would be in mg/dL. They cannot be added until the food model is fitted to mg/dL.
 
 ### Not yet decided or built
 
-- Shape of the insulin action curve (and whether it uses the table's duration or half-life).
-- Mapping `B(t)` to mg/dL.
-- Insulin on board, carbohydrate ratio, bolus calculation, and use of either side in the forecast or footer.
+- The insulin model itself: its form, factors and whether it uses the table's duration or half-life.
+- Mapping `B(t)` to mg/dL so the sum is meaningful.
+- Use of the sum in the forecast or footer.
 
 ## Known limits
 

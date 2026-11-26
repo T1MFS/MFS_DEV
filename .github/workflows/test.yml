@@ -21,7 +21,7 @@ jobs:
         with:
           repository: fx2-t1d/TidepoolApi_extended
           # Switch to master once TidepoolApi_extended PR #1 is merged.
-          ref: feature/biometric-type
+          ref: master
           path: spec
       - run: python3 -m pip install pyyaml
       - run: SPEC_DIR="$GITHUB_WORKSPACE/spec" PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_biometric_spec_conformance.py'

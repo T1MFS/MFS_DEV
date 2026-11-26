@@ -22,8 +22,11 @@ final class DiagnosticsLog: ObservableObject {
         return f
     }()
 
-    @Published private(set) var lines: [String] = []
+    private let store = HistoryStore<String>(filename: "diagnostics-log.json")
+    @Published private(set) var lines: [String]
     @Published private(set) var stats: [String: PipelineStats] = [:]
+
+    init() { lines = store.load() }
 
     func record(_ source: String, _ message: String) {
         let line = "\(stamp.string(from: Date())) [\(source)] \(message)"
@@ -31,6 +34,7 @@ final class DiagnosticsLog: ObservableObject {
         DispatchQueue.main.async {
             self.lines.append(line)
             if self.lines.count > Self.maxLines { self.lines.removeFirst(self.lines.count - Self.maxLines) }
+            self.store.save(self.lines)
         }
     }
 
@@ -39,6 +43,6 @@ final class DiagnosticsLog: ObservableObject {
     }
 
     func clear() {
-        DispatchQueue.main.async { self.lines = []; self.stats = [:] }
+        DispatchQueue.main.async { self.lines = []; self.stats = [:]; self.store.save([]) }
     }
 }

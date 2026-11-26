@@ -119,4 +119,12 @@ final class BiometricStreamTests: XCTestCase {
         stream.setApproved(.sleep, false, connectionID: connection.id)
         XCTAssertFalse(stream.consent.isActive)
     }
+
+    func testBiometricsNeverGoBelowTLSEvenIfTheConnectionAllowsIt() {
+        var weak = ServiceConnection(name: "x", baseURL: "https://example.test", auth: .none)
+        weak.minimumSecurity = SecurityLevel.none
+        XCTAssertEqual(DigitalMeEndpoint.biometrics.requiredSecurity(for: weak), .tls)
+        XCTAssertEqual(DigitalMeEndpoint.data.requiredSecurity(for: weak), SecurityLevel.none)
+        XCTAssertEqual(DigitalMeEndpoint.biometrics.requiredSecurity(for: connection), .mtls)
+    }
 }

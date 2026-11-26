@@ -7,7 +7,7 @@ struct BiometricStreamConsent: Codable, Equatable {
     /// The DigitalMe connection the approval was given for.
     var connectionID: UUID?
     var approvedAt: Date?
-    /// Set when the stream stopped itself (security changed, upload refused). The approval stays; the user resumes it.
+    /// Set when the stream stopped itself (security fell below the required level, or the upload was refused). The approval stays; the user resumes it.
     var pausedReason: String?
 
     var isActive: Bool { !approved.isEmpty && connectionID != nil }
@@ -27,12 +27,14 @@ final class BiometricStream: ObservableObject {
     @Published private(set) var lastSentCount = 0
     @Published private(set) var lastError: String?
 
+    /// Called when a send happens under a changed security state (new certificate, different level or mode), so it can be logged with its time.
+    var onSecurityChange: ((ServiceConnection, SecuritySnapshot, SecurityChange) -> Void)?
     /// Where the connections come from; set once the stores exist.
     var connections: () -> [ServiceConnection] = { [] }
     static let chunkSize = 500
 
     private let read: Reader
-    private let upload: Uploader
+    private let customUpload: Uploader?
     private let defaults: UserDefaults
     private var syncState: BiometricSyncState
     private var running = false
@@ -42,10 +44,7 @@ final class BiometricStream: ObservableObject {
     init(defaults: UserDefaults = .standard, read: @escaping Reader, upload: Uploader? = nil) {
         self.defaults = defaults
         self.read = read
-        // Standing approval is the user's confirmation, and `readingArrived` checks it before every send.
-        self.upload = upload ?? { connection, records in
-            try await DigitalMeUploadClient(connection: connection).upload(records: records, to: .biometrics, userConfirmed: true)
-        }
+        self.customUpload = upload
         syncState = BiometricSyncState.load(from: defaults)
         if let data = defaults.data(forKey: Self.consentKey), let saved = try? JSONDecoder().decode(BiometricStreamConsent.self, from: data) {
             consent = saved
@@ -94,6 +93,17 @@ final class BiometricStream: ObservableObject {
             rerun = false
             await syncOnce()
         } while rerun && consent.isStreaming
+    }
+
+    /// Standing approval is the user's confirmation. A connection that still meets the required security (never below TLS)
+    /// is accepted even if it changed; the change is reported for the audit log instead of pausing the stream.
+    private func upload(_ connection: ServiceConnection, _ records: [[String: Any]]) async throws {
+        if let customUpload { try await customUpload(connection, records); return }
+        let result = try await DigitalMeUploadClient(connection: connection)
+            .upload(records: records, to: .biometrics, userConfirmed: true, acknowledgedChange: true)
+        if result.change != .unchanged {
+            await MainActor.run { onSecurityChange?(connection, result.snapshot, result.change) }
+        }
     }
 
     @MainActor private func syncOnce() async {

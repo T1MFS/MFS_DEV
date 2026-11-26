@@ -114,6 +114,12 @@ struct MFSApp: App {
             .onAppear {
                 fetchGlucose()
                 biometricStream.connections = { [serviceStore] in serviceStore.connections }
+                biometricStream.onSecurityChange = { [serviceStore] connection, snapshot, change in
+                    var updated = connection
+                    updated.lastSnapshot = snapshot
+                    serviceStore.save(updated)
+                    serviceStore.logSecurity(["Biometric stream: \(change.summary) Sent under \(snapshot.level.shortLabel)."], for: connection.id, at: snapshot.checkedAt)
+                }
             }
             .onChange(of: glucoseFeed.readings.last?.date) { _, date in
                 guard date != nil else { return }

@@ -1,6 +1,6 @@
 import Foundation
 
-struct GlucoseReading: Equatable, Identifiable {
+struct GlucoseReading: Equatable, Identifiable, Codable {
     let date: Date
     let milligramsPerDeciliter: Double
     var id: Date { date }

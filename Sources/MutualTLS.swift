@@ -208,6 +208,19 @@ enum DigitalMeEndpoint {
         }
     }
 
+    /// Lowest security level this data may leave the device with, whatever the connection's own setting says.
+    /// Biometrics are never sent unencrypted or to a server whose identity is not verified.
+    var minimumSecurity: SecurityLevel {
+        switch self {
+        case .data: return .none
+        case .biometrics: return .tls
+        }
+    }
+
+    func requiredSecurity(for connection: ServiceConnection) -> SecurityLevel {
+        max(connection.requiredSecurity, minimumSecurity)
+    }
+
     /// Whether a record's `type` belongs on this endpoint. Glucose never goes to biometrics.
     func accepts(type: String) -> Bool {
         switch self {
@@ -248,8 +261,9 @@ struct DigitalMeUploadClient {
         guard let snapshot = report.snapshot else {
             throw DigitalMeUploadError.securityCheckFailed(report.failure ?? .unreachable("Unknown error"))
         }
-        guard snapshot.level >= connection.requiredSecurity else {
-            throw DigitalMeUploadError.securityBelowRequired(actual: snapshot.level, required: connection.requiredSecurity)
+        let required = endpoint.requiredSecurity(for: connection)
+        guard snapshot.level >= required else {
+            throw DigitalMeUploadError.securityBelowRequired(actual: snapshot.level, required: required)
         }
         let change = SecurityChange.compare(previous: connection.lastSnapshot, current: snapshot)
         if change.needsAcknowledgement && !acknowledgedChange { throw DigitalMeUploadError.securityChanged(change) }

@@ -59,7 +59,7 @@ Food > Text is a table: name, carbs and protein (required), fat and fiber (optio
 
 ## Dose formula editor
 
-Manage > menu > Dose formulas edits B(t) = x·c(t) + y·p(t) + z·f(t), the impact on blood glucose t minutes after eating. One row per nutrient: constant (x, y, z, any value), time function (constant, linear rise or decay, logarithmic rise or decay over a span in minutes), and an optional × G(t) multiplier using the glucose level. The carbohydrate row also chooses how fiber counts (total carbs, net with fiber ÷ 2, or net with all fiber). The formula is saved on the device and previewed for the accepted food. It is not yet used for the forecast or the footer's bolus values; the constants start at 0, so nothing is suggested until you set them.
+Manage > menu > Dose formulas edits toy model two: B(t) = b + C·(s_σ * [A1·g_fast + A2·g_hold])(t), multiplied by the net carbohydrate grams of the accepted food. Seven factors: three times (t1 fast peak, t2 slow hold center, σ smear, in minutes), three amplitudes (A1, A2, C) and an offset b; the 120 min hold and 60 min edge width are fixed. Defaults (A1 1, A2 1.5, C 0.5, t1 20, t2 240, σ 26.3, b 0) give a fast peak of 0.0065 per gram at 62 min, a dip near 166 and a second hump near 276. The carbohydrate section chooses how fiber counts. Protein and fat are not used in this model. The formula is saved on the device and previewed for the accepted food. It is not yet used for the forecast or the footer's bolus values.
 
 ## Insulin profiles and service connections
 

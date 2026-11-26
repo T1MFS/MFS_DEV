@@ -2,27 +2,24 @@ import XCTest
 @testable import MFS
 
 final class DoseFormulaTests: XCTestCase {
-    func testShapes() {
-        XCTAssertEqual(DoseTimeFunction.linearDecay.shape(minutes: 90, duration: 180), 0.5, accuracy: 1e-9)
-        XCTAssertEqual(DoseTimeFunction.linearRise.shape(minutes: 270, duration: 180), 1, accuracy: 1e-9)
-        XCTAssertEqual(DoseTimeFunction.logRise.shape(minutes: 0, duration: 180), 0, accuracy: 1e-9)
-        XCTAssertEqual(DoseTimeFunction.logRise.shape(minutes: 180, duration: 180), 1, accuracy: 1e-9)
-        XCTAssertEqual(DoseTimeFunction.logDecay.shape(minutes: 180, duration: 180), 0, accuracy: 1e-9)
-        XCTAssertEqual(DoseTimeFunction.constant.shape(minutes: -1, duration: 180), 0)
+    func testDefaultCurveMatchesToyModelTwoLandmarks() {
+        let curve = DoseFormula().curve()
+        let peak = curve.indices.max { curve[$0] < curve[$1] }!
+        XCTAssertEqual(peak, 62)
+        XCTAssertEqual(curve[62], 0.0065, accuracy: 5e-5)
+        XCTAssertEqual(curve[166], 0.0020, accuracy: 5e-5)
+        XCTAssertEqual(curve[276], 0.0029, accuracy: 5e-5)
+        XCTAssertLessThan(curve[600], 1e-4)
     }
 
-    func testImpactSumsTermsWithGlucoseScalarAndFiber() {
+    func testOffsetAndFiberAndAmount() {
         var formula = DoseFormula()
-        formula.carbohydrate = DoseTerm(coefficient: 3, function: .constant, durationMinutes: 180, scalar: .glucose)
-        formula.protein = DoseTerm(coefficient: 2, function: .linearDecay, durationMinutes: 100, scalar: .none)
+        formula.offset = 0.01
         formula.fiber = .half
-        // carbs 40 - 10/2 = 35; 3*35*120 = 12600; protein 2*10*0.5 = 10
-        let value = formula.impact(carbohydrate: 40, fiber: 10, protein: 10, fat: nil, minutes: 50, glucose: 120)
-        XCTAssertEqual(value, 12610, accuracy: 1e-6)
-    }
-
-    func testGlucoseScalarWithoutGlucoseContributesZero() {
-        let term = DoseTerm(coefficient: 1, function: .constant, durationMinutes: 60, scalar: .glucose)
-        XCTAssertEqual(term.value(amount: 10, minutes: 5, glucose: nil), 0)
+        // net carbs 40 - 10/2 = 35
+        let base = DoseFormula().curve()[62]
+        XCTAssertEqual(formula.impact(carbohydrate: 40, fiber: 10, minutes: 62), 35 * (base + 0.01), accuracy: 1e-9)
+        XCTAssertEqual(formula.impact(carbohydrate: nil, fiber: nil, minutes: 62), 0)
+        XCTAssertEqual(formula.impact(carbohydrate: 40, fiber: nil, minutes: -1), 0)
     }
 }

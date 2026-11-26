@@ -82,10 +82,19 @@ class CGMHostBase: NSObject, CGMManagerDelegate {
     }
 
     func cgmManager(_ manager: CGMManager, hasNew events: [PersistedCgmEvent]) async {
-        DiagnosticsLog.shared.record(diagnosticsName, "Received \(events.count) CGM event(s)")
+        for event in events {
+            var parts = ["CGM event \(event.type)", "device \(event.deviceIdentifier)"]
+            if let message = event.failureMessage { parts.append("failure: \(message)") }
+            if let error = event.error { parts.append("error: \(error)") }
+            if let lifetime = event.expectedLifetime { parts.append("lifetime \(Int(lifetime / 3600)) h") }
+            if let warmup = event.warmupPeriod { parts.append("warm-up \(Int(warmup / 60)) min") }
+            if let metadata = event.metadata, !metadata.isEmpty { parts.append("metadata \(metadata)") }
+            DiagnosticsLog.shared.record(diagnosticsName, parts.joined(separator: ", "))
+        }
     }
 
     func cgmManagerWantsDeletion(_ manager: CGMManager) async {
+        DiagnosticsLog.shared.record(diagnosticsName, "Manager asked to be deleted")
         wantsDeletion(manager)
     }
 
@@ -108,9 +117,14 @@ class CGMHostBase: NSObject, CGMManagerDelegate {
         completion?(nil)
     }
 
-    @MainActor func issueAlert(_ alert: Alert) async {}
+    @MainActor func issueAlert(_ alert: Alert) async {
+        let content = alert.foregroundContent ?? alert.backgroundContent
+        DiagnosticsLog.shared.record(diagnosticsName, "Alert issued \(alert.identifier.alertIdentifier): \(content.title) - \(content.body)")
+    }
 
-    @MainActor func retractAlert(identifier: Alert.Identifier) async {}
+    @MainActor func retractAlert(identifier: Alert.Identifier) async {
+        DiagnosticsLog.shared.record(diagnosticsName, "Alert retracted \(identifier.alertIdentifier)")
+    }
 
     func doesIssuedAlertExist(identifier: Alert.Identifier) async throws -> Bool { false }
 

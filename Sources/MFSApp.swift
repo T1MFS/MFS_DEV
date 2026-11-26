@@ -28,6 +28,9 @@ struct MFSApp: App {
     @StateObject private var profileStore = InsulinProfileStore()
     @StateObject private var serviceStore = ServiceConnectionStore()
     @StateObject private var formulaStore = DoseFormulaStore()
+    @StateObject private var biometricStream = BiometricStream(read: { kinds, state in
+        try await HealthBiometricReader().read(kinds: kinds, state: state)
+    })
     @StateObject private var glucoseFeed: GlucoseFeed
     private let cgmHosts: [AnyObject]
     private let fetchGlucose: () -> Void
@@ -105,9 +108,17 @@ struct MFSApp: App {
             .environmentObject(formulaStore)
             .environmentObject(profileStore)
             .environmentObject(serviceStore)
+            .environmentObject(biometricStream)
             .environmentObject(glucoseFeed)
             .environmentObject(deviceActions)
-            .onAppear { fetchGlucose() }
+            .onAppear {
+                fetchGlucose()
+                biometricStream.connections = { [serviceStore] in serviceStore.connections }
+            }
+            .onChange(of: glucoseFeed.readings.last?.date) { _, date in
+                guard date != nil else { return }
+                Task { await biometricStream.readingArrived() }
+            }
             .onChange(of: foodStore.food?.id) { _, id in
                 guard id != nil else { return }
                 managePath = NavigationPath()
@@ -174,6 +185,7 @@ private struct ManageView: View {
     @State private var showFormula = false
     @State private var showProfiles = false
     @State private var showServices = false
+    @State private var showStream = false
 
     var body: some View {
         List {
@@ -222,6 +234,7 @@ private struct ManageView: View {
                     Button("Connect devices") { showDevices = true }
                     Button("Insulin profiles") { showProfiles = true }
                     Button("Service connections") { showServices = true }
+                    Button("Biometric stream") { showStream = true }
                     Button("Dose formulas") { showFormula = true }
                     Button("Safety limits") {}.disabled(true)
                 } label: {
@@ -233,6 +246,7 @@ private struct ManageView: View {
         .sheet(isPresented: $showFormula) { DoseFormulaView() }
         .sheet(isPresented: $showProfiles) { InsulinProfilesView() }
         .sheet(isPresented: $showServices) { ServiceConnectionsView() }
+        .sheet(isPresented: $showStream) { BiometricStreamView() }
     }
 }
 

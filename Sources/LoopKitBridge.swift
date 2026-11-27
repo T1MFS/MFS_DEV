@@ -113,5 +113,5 @@ extension OmnipodHistoryReader.HistoryEvent {
 
 extension DeviceActions {
     /// Doses recorded from the pump so far.
-    var insulinDoses: [InsulinDose] { omnipod?.history.compactMap(\.insulinDose) ?? [] }
+    @MainActor var insulinDoses: [InsulinDose] { omnipod?.history.compactMap(\.insulinDose) ?? [] }
 }

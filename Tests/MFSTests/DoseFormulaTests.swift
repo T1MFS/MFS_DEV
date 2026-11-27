@@ -63,4 +63,52 @@ final class DoseFormulaTests: XCTestCase {
         store.simpleProteinEntry = nil
         XCTAssertEqual(store.simpleProtein, 2)
     }
+
+    func testSimpleRecommendationAddsPartsAndListsMissingInputs() {
+        var inputs = DoseInputs()
+        inputs.simpleCarbUnits = 4
+        inputs.simpleProteinUnits = 0.8
+        let partial = SimpleDoseRecommender().recommend(inputs, formula: DoseFormula())
+        XCTAssertEqual(partial.bolusUnits ?? 0, 4.8, accuracy: 1e-9)
+        XCTAssertFalse(partial.isComplete)
+        XCTAssertTrue(partial.missing.contains(.insulinOnBoard))
+        XCTAssertTrue(partial.missing.contains(.glucose))
+
+        inputs.glucose = 200
+        inputs.targetMgdl = 100
+        inputs.sensitivityMgdlPerUnit = 50
+        inputs.insulinOnBoard = 1
+        let full = SimpleDoseRecommender().recommend(inputs, formula: DoseFormula())
+        // 4 + 0.8 + (200-100)/50 - 1
+        XCTAssertEqual(full.bolusUnits ?? 0, 5.8, accuracy: 1e-9)
+        XCTAssertTrue(full.isComplete)
+    }
+
+    func testRecommendationNeverNegativeAndMealSpecificIsPlaceholder() {
+        var inputs = DoseInputs()
+        inputs.simpleCarbUnits = 1
+        inputs.glucose = 60
+        inputs.targetMgdl = 100
+        inputs.sensitivityMgdlPerUnit = 20
+        inputs.insulinOnBoard = 0
+        XCTAssertEqual(SimpleDoseRecommender().recommend(inputs, formula: DoseFormula()).bolusUnits, 0)
+
+        let meal = MealSpecificDoseRecommender().recommend(DoseInputs(), formula: DoseFormula())
+        XCTAssertNil(meal.bolusUnits)
+        XCTAssertTrue(meal.missing.contains(.mealHistory))
+    }
+
+    func testExperimentalRecommendationNeedsSensitivity() {
+        var inputs = DoseInputs()
+        inputs.carbohydrate = 30
+        inputs.protein = 20
+        inputs.fat = 5
+        let without = ExperimentalDoseRecommender().recommend(inputs, formula: DoseFormula())
+        XCTAssertNil(without.bolusUnits.flatMap { $0 > 0 ? $0 : nil })
+        XCTAssertTrue(without.missing.contains(.sensitivity))
+        inputs.sensitivityMgdlPerUnit = 50
+        let with = ExperimentalDoseRecommender().recommend(inputs, formula: DoseFormula())
+        XCTAssertGreaterThan(with.bolusUnits ?? 0, 0)
+        XCTAssertNotNil(with.enhancedBasalUnitsPerHour)
+    }
 }

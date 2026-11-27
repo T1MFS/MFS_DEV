@@ -15,6 +15,7 @@ struct DosingSection: View {
     @EnvironmentObject private var foodStore: AcceptedFoodStore
     @EnvironmentObject private var formulaStore: DoseFormulaStore
     @EnvironmentObject private var profileStore: InsulinProfileStore
+    @EnvironmentObject private var feed: GlucoseFeed
 
     var body: some View {
         Section("Dosing") {
@@ -28,6 +29,11 @@ struct DosingSection: View {
             case .simple: simple
             case .experimental: experimental
             }
+        }
+        Section("Recommendation") {
+            RecommendationView(recommendation: DosingSummary.recommendation(
+                mode: dosing.mode, food: foodStore.food, formula: formulaStore.formula,
+                profiles: profileStore, dosing: dosing, glucose: feed.readings.last))
         }
         Section {
             NavigationLink("Advanced: dose formula") { DoseFormulaView() }
@@ -72,42 +78,85 @@ struct DosingSection: View {
 
     private var experimental: some View {
         Group {
-            if let dose = experimentalDose(foodStore.food) {
-                LabeledContent("Bolus", value: unitsText(dose.bolusUnits))
-                LabeledContent("Enhanced basal", value: "+\(rateText(dose.extraBasalUnitsPerHour)) for \(dose.extraBasalMinutes / 60) h \(dose.extraBasalMinutes % 60) min")
-                Text("Drawn from the dose formula to match the meal's modelled impact. Review the result in the Evaluate tab. Experimental: the formula is not fitted to data.")
-                    .font(.footnote).foregroundStyle(.secondary)
-            } else if foodStore.food == nil {
-                Text("Accept a food to see an experimental dose.").foregroundStyle(.secondary)
-            } else {
-                Text("No dose available. Check the formula under Advanced and the sensitivity in your insulin profile.")
-                    .font(.footnote).foregroundStyle(.secondary)
-            }
+            Text("Draws on the dose formula for a bolus plus an enhanced basal that together offset the meal's modelled impact. Review it in the Evaluate tab.")
+            Text("Experimental: the formula is not fitted to data.")
+                .font(.footnote).foregroundStyle(.secondary)
         }
-    }
-
-    private func experimentalDose(_ food: AcceptedFood?) -> ExperimentalDose? {
-        DosingSummary.experimentalDose(food: food, formula: formulaStore.formula, profiles: profileStore)
     }
 }
 
 enum DosingSummary {
-    static func experimentalDose(food: AcceptedFood?, formula: DoseFormula, profiles: InsulinProfileStore) -> ExperimentalDose? {
-        guard let food, let sensitivity = profiles.segment(at: Date())?.sensitivityMgdlPerUnit else { return nil }
-        return formula.experimentalDose(carbohydrate: food.totalCarbohydrates, fiber: food.totalFiber,
-                                        protein: food.totalProtein, fat: food.totalFat,
-                                        sensitivityMgdlPerUnit: sensitivity)
+    /// Gathers what the recommenders read. Sources that do not exist yet are the "Unavailable" placeholders.
+    static func inputs(food: AcceptedFood?, profiles: InsulinProfileStore, dosing: DosingStore, glucose: GlucoseReading?,
+                       now: Date = Date(), iob: InsulinOnBoardSource = UnavailableInsulinOnBoard(),
+                       history: MealHistorySource = UnavailableMealHistory()) -> DoseInputs {
+        let segment = profiles.segment(at: now)
+        return DoseInputs(
+            mealName: food?.product.name,
+            carbohydrate: food?.totalCarbohydrates, fiber: food?.totalFiber,
+            protein: food?.totalProtein, fat: food?.totalFat,
+            glucose: glucose?.milligramsPerDeciliter,
+            carbRatioGramsPerUnit: segment?.carbRatioGramsPerUnit,
+            sensitivityMgdlPerUnit: segment?.sensitivityMgdlPerUnit,
+            targetMgdl: segment?.targetMgdl,
+            insulinOnBoard: iob.units(at: now),
+            basalUnitsPerHour: segment?.basalUnitsPerHour,
+            simpleCarbUnits: dosing.simpleCarbs, simpleProteinUnits: dosing.simpleProtein,
+            mealHistoryBolus: food.flatMap { history.bolusUnits(forMealNamed: $0.product.name) })
+    }
+
+    static func recommendation(mode: DosingMode, food: AcceptedFood?, formula: DoseFormula, profiles: InsulinProfileStore,
+                               dosing: DosingStore, glucose: GlucoseReading?) -> DoseRecommendation {
+        DoseRecommenders.recommender(for: mode)
+            .recommend(inputs(food: food, profiles: profiles, dosing: dosing, glucose: glucose), formula: formula)
     }
 }
 
-/// Meal grams and the dose for the selected dosing tab, pinned to the bottom of Manage.
+/// The recommended bolus with how it was built, and which inputs are still placeholders.
+struct RecommendationView: View {
+    let recommendation: DoseRecommendation
+
+    var body: some View {
+        Group {
+            LabeledContent("Recommended bolus") {
+                Text(unitsText(recommendation.bolusUnits)).font(.title3.bold())
+            }
+            ForEach(recommendation.parts) { part in
+                LabeledContent(part.label, value: signedUnits(part.units)).font(.footnote)
+            }
+            if let rate = recommendation.enhancedBasalUnitsPerHour, let minutes = recommendation.enhancedBasalMinutes {
+                LabeledContent("Enhanced basal", value: "+\(rateText(rate)) for \(minutes / 60) h \(minutes % 60) min")
+            }
+            if !recommendation.missing.isEmpty {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Incomplete. Not available yet:")
+                        .font(.footnote.weight(.semibold))
+                    ForEach(recommendation.missing) { Text("• \($0.label)").font(.footnote) }
+                }
+                .foregroundStyle(.secondary)
+            }
+            Text("Shown for you to review. Nothing is sent to the pump.")
+                .font(.footnote).foregroundStyle(.secondary)
+        }
+    }
+
+    private func signedUnits(_ units: Double) -> String {
+        "\(units >= 0 ? "+" : "−")\(abs(units).formatted(.number.precision(.fractionLength(0...2)))) U"
+    }
+}
+
+/// Meal grams and the recommendation for the selected dosing tab, pinned to the bottom of Manage.
 struct DosingFooter: View {
     let food: AcceptedFood?
     @EnvironmentObject private var dosing: DosingStore
     @EnvironmentObject private var formulaStore: DoseFormulaStore
     @EnvironmentObject private var profileStore: InsulinProfileStore
+    @EnvironmentObject private var feed: GlucoseFeed
 
     var body: some View {
+        let recommendation = DosingSummary.recommendation(
+            mode: dosing.mode, food: food, formula: formulaStore.formula,
+            profiles: profileStore, dosing: dosing, glucose: feed.readings.last)
         Grid(horizontalSpacing: 8, verticalSpacing: 10) {
             GridRow {
                 cell(grams(food?.totalCarbohydrates), "Carbohydrate", "Carbs in the meal (g)")
@@ -116,21 +165,10 @@ struct DosingFooter: View {
             }
             Divider()
             GridRow {
-                switch dosing.mode {
-                case .simple:
-                    cell(unitsText(dosing.simpleCarbs), "Bolus for carbohydrate", "Simple bolus (U)")
-                    cell(unitsText(dosing.simpleProtein), "Bolus for protein", "Simple bolus (U)")
-                    cell(rateText(currentBasal), "Basal", "Current basal rate (U/h)")
-                case .experimental:
-                    let dose = DosingSummary.experimentalDose(food: food, formula: formulaStore.formula, profiles: profileStore)
-                    cell(unitsText(dose?.bolusUnits), "Bolus", "Experimental bolus (U)")
-                    cell(rateText(dose.map { $0.extraBasalUnitsPerHour + (currentBasal ?? 0) }), "Enhanced basal", "Basal plus extra (U/h)")
-                    cell(dose.map { "\($0.extraBasalMinutes) min" } ?? "—", "Duration", "Enhanced basal length")
-                case .mealSpecific:
-                    cell("—", "Bolus", "Meal specific (U)")
-                    cell("—", "Enhanced basal", "Meal specific (U/h)")
-                    cell(rateText(currentBasal), "Basal", "Current basal rate (U/h)")
-                }
+                cell(unitsText(recommendation.bolusUnits), "Bolus", recommendation.isComplete ? "Recommended (U)" : "Incomplete (U)")
+                cell(rateText(recommendation.enhancedBasalUnitsPerHour.map { $0 + (currentBasal ?? 0) } ?? currentBasal),
+                     "Basal", recommendation.enhancedBasalUnitsPerHour == nil ? "Current rate (U/h)" : "Enhanced rate (U/h)")
+                cell(recommendation.enhancedBasalMinutes.map { "\($0) min" } ?? "—", "Enhanced for", "Basal boost length")
             }
         }
         .padding(12)

@@ -31,7 +31,8 @@ struct InsulinProfilesView: View {
                         }
                     Button("Add alternative profile", systemImage: "plus") {
                         editing = InsulinProfile(name: "", segments: store.main.segments.map {
-                            ProfileSegment(startMinute: $0.startMinute, basalUnitsPerHour: $0.basalUnitsPerHour, sensitivityMgdlPerUnit: $0.sensitivityMgdlPerUnit)
+                            ProfileSegment(startMinute: $0.startMinute, basalUnitsPerHour: $0.basalUnitsPerHour, sensitivityMgdlPerUnit: $0.sensitivityMgdlPerUnit,
+                                           carbRatioGramsPerUnit: $0.carbRatioGramsPerUnit, targetMgdl: $0.targetMgdl)
                         })
                     }
                 } header: {
@@ -91,6 +92,10 @@ private struct ProfileEditor: View {
                                 numberField("Basal", value: $segment.basalUnitsPerHour, unit: "U/h")
                                 numberField("Sensitivity", value: $segment.sensitivityMgdlPerUnit, unit: "mg/dL per U")
                             }
+                            HStack {
+                                optionalNumberField("Carb ratio", value: $segment.carbRatioGramsPerUnit, unit: "g per U")
+                                optionalNumberField("Target", value: $segment.targetMgdl, unit: "mg/dL")
+                            }
                         }
                     }
                     .onDelete { profile.segments.remove(atOffsets: $0) }
@@ -99,7 +104,8 @@ private struct ProfileEditor: View {
                         let start = profile.segments.isEmpty ? 0 : (stride(from: 0, to: 1440, by: 30).first { !used.contains($0) } ?? 0)
                         let last = profile.sortedSegments.last
                         profile.segments.append(ProfileSegment(startMinute: start,
-                            basalUnitsPerHour: last?.basalUnitsPerHour ?? 0, sensitivityMgdlPerUnit: last?.sensitivityMgdlPerUnit ?? 50))
+                            basalUnitsPerHour: last?.basalUnitsPerHour ?? 0, sensitivityMgdlPerUnit: last?.sensitivityMgdlPerUnit ?? 50,
+                            carbRatioGramsPerUnit: last?.carbRatioGramsPerUnit, targetMgdl: last?.targetMgdl))
                     }
                 } header: {
                     Text("Time frames")
@@ -133,6 +139,15 @@ private struct ProfileEditor: View {
         VStack(alignment: .leading) {
             Text("\(title) (\(unit))").font(.caption).foregroundStyle(.secondary)
             TextField("0", value: value, format: .number)
+                .keyboardType(.decimalPad)
+                .textFieldStyle(.roundedBorder)
+        }
+    }
+
+    private func optionalNumberField(_ title: String, value: Binding<Double?>, unit: String) -> some View {
+        VStack(alignment: .leading) {
+            Text("\(title) (\(unit))").font(.caption).foregroundStyle(.secondary)
+            TextField("Not set", value: value, format: .number)
                 .keyboardType(.decimalPad)
                 .textFieldStyle(.roundedBorder)
         }

@@ -10,6 +10,10 @@ struct ProfileSegment: Identifiable, Codable, Equatable {
     var basalUnitsPerHour: Double
     /// How far one unit drops glucose, in mg/dL.
     var sensitivityMgdlPerUnit: Double
+    /// Grams of carbohydrate one unit covers. nil until entered; dose recommendations list it as missing.
+    var carbRatioGramsPerUnit: Double? = nil
+    /// Glucose the correction aims for, in mg/dL. nil until entered.
+    var targetMgdl: Double? = nil
 }
 
 struct InsulinProfile: Identifiable, Codable, Equatable {

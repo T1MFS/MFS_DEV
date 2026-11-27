@@ -130,6 +130,13 @@ struct EvaluateView: View {
                 }
                 .pickerStyle(.segmented)
             }
+            Section {
+                NavigationLink("Predictions") {
+                    PredictionEvaluationView(registry: PredictionModelRegistry(), context: ForecastContext(readings: feed.readings))
+                }
+            } footer: {
+                Text("Compare a model's prediction at a chosen moment with what glucose actually did.")
+            }
             Section("Glucose") { toggle(.glucose) }
             Section {
                 ForEach(EvaluateSeries.insulinParts) { toggle($0) }

@@ -8,11 +8,11 @@ struct ProfileSegment: Identifiable, Codable, Equatable {
     var startMinute: Int
     /// Units per hour.
     var basalUnitsPerHour: Double
-    /// How far one unit drops glucose, in mg/dL.
+    /// How far one unit drops glucose, in mg/dl.
     var sensitivityMgdlPerUnit: Double
     /// Grams of carbohydrate one unit covers. nil until entered; dose recommendations list it as missing.
     var carbRatioGramsPerUnit: Double? = nil
-    /// Glucose the correction aims for, in mg/dL. nil until entered.
+    /// Glucose the correction aims for, in mg/dl. nil until entered.
     var targetMgdl: Double? = nil
 }
 
@@ -44,7 +44,7 @@ struct InsulinProfile: Identifiable, Codable, Equatable {
         for segment in segments {
             if !(0..<1440).contains(segment.startMinute) { found.append("A start time is out of range.") }
             if !segment.basalUnitsPerHour.isFinite || segment.basalUnitsPerHour < 0 { found.append("Basal must be 0 or more units/hour.") }
-            if !segment.sensitivityMgdlPerUnit.isFinite || segment.sensitivityMgdlPerUnit <= 0 { found.append("Sensitivity must be more than 0 mg/dL per unit.") }
+            if !segment.sensitivityMgdlPerUnit.isFinite || segment.sensitivityMgdlPerUnit <= 0 { found.append("Sensitivity must be more than 0 mg/dl per unit.") }
         }
         return Array(Set(found)).sorted()
     }

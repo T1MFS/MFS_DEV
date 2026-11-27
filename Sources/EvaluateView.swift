@@ -21,9 +21,9 @@ enum EvaluateSeries: String, CaseIterable, Identifiable {
 
     var units: String {
         switch self {
-        case .glucose: return "mg/dL"
-        case .insulinOnBoard, .bolus: return "U"
-        case .basal: return "U/h"
+        case .glucose: return "mg/dl"
+        case .insulinOnBoard, .bolus: return "u"
+        case .basal: return "u/h"
         case .heartRate: return "bpm"
         case .heartRateVariability: return "ms"
         case .sleep: return "min"

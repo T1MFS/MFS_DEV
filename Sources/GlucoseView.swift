@@ -70,7 +70,7 @@ struct GlucoseView: View {
         HStack(alignment: .firstTextBaseline) {
             Text(latest.milligramsPerDeciliter.formatted(.number.precision(.fractionLength(0))))
                 .font(.largeTitle.bold())
-            Text("mg/dL").foregroundStyle(.secondary)
+            Text("mg/dl").foregroundStyle(.secondary)
             if let trend = GlucoseTrendCalculator.trend(of: readings) {
                 Image(systemName: trend.symbolName).font(.title2)
             }
@@ -106,13 +106,13 @@ struct GlucoseView: View {
         Chart {
             ForEach(readings) { reading in
                 LineMark(x: .value("Time", reading.date),
-                         y: .value("mg/dL", reading.milligramsPerDeciliter),
+                         y: .value("mg/dl", reading.milligramsPerDeciliter),
                          series: .value("Series", "Glucose"))
                     .foregroundStyle(.blue)
             }
             ForEach(forecast) { point in
                 LineMark(x: .value("Time", point.date),
-                         y: .value("mg/dL", point.milligramsPerDeciliter),
+                         y: .value("mg/dl", point.milligramsPerDeciliter),
                          series: .value("Series", "Forecast"))
                     .foregroundStyle(.gray)
                     .lineStyle(StrokeStyle(lineWidth: 2, dash: [4, 3]))

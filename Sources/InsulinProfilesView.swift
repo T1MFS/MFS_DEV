@@ -89,12 +89,12 @@ private struct ProfileEditor: View {
                                 Text("to \(timeText(profile.endMinute(of: segment)))").foregroundStyle(.secondary)
                             }
                             HStack {
-                                numberField("Basal", value: $segment.basalUnitsPerHour, unit: "U/h")
-                                numberField("Sensitivity", value: $segment.sensitivityMgdlPerUnit, unit: "mg/dL per U")
+                                numberField("Basal", value: $segment.basalUnitsPerHour, unit: "u/h")
+                                numberField("Sensitivity", value: $segment.sensitivityMgdlPerUnit, unit: "mg/dl per u")
                             }
                             HStack {
-                                optionalNumberField("Carb ratio", value: $segment.carbRatioGramsPerUnit, unit: "g per U")
-                                optionalNumberField("Target", value: $segment.targetMgdl, unit: "mg/dL")
+                                optionalNumberField("Carb ratio", value: $segment.carbRatioGramsPerUnit, unit: "c per u")
+                                optionalNumberField("Target", value: $segment.targetMgdl, unit: "mg/dl")
                             }
                         }
                     }
@@ -110,7 +110,7 @@ private struct ProfileEditor: View {
                 } header: {
                     Text("Time frames")
                 } footer: {
-                    Text("Each frame runs until the next one starts; the last wraps past midnight. Basal is units per hour. Sensitivity is how many mg/dL one unit lowers glucose. Enter your own values.")
+                    Text("Each frame runs until the next one starts; the last wraps past midnight. Basal is units per hour. Sensitivity is how many mg/dl one unit lowers glucose. Enter your own values.")
                 }
                 if !profile.issues.isEmpty {
                     Section { ForEach(profile.issues, id: \.self) { Text($0).font(.footnote).foregroundStyle(.red) } }

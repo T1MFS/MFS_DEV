@@ -88,12 +88,12 @@ struct ExperimentalDose: Equatable {
     var bolusUnits: Double
     var extraBasalUnitsPerHour: Double
     var extraBasalMinutes: Int
-    /// Total modelled glucose rise the dose offsets, in mg/dL.
+    /// Total modelled glucose rise the dose offsets, in mg/dl.
     var riseMgdl: Double
 }
 
 extension DoseFormula {
-    /// Treats B(t) as mg/dL of rise per minute, so total insulin is its area divided by sensitivity.
+    /// Treats B(t) as mg/dl of rise per minute, so total insulin is its area divided by sensitivity.
     /// The part inside `bolusMinutes` goes in as a bolus; the tail (until the curve falls below 1% of its peak)
     /// is spread evenly as extra basal. Results are relative until B(t) is fitted to data.
     func experimentalDose(carbohydrate: Double?, fiber: Double?, protein: Double?, fat: Double?,

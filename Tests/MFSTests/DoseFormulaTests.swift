@@ -72,7 +72,7 @@ final class DoseFormulaTests: XCTestCase {
         inputs.sensitivityMgdlPerUnit = 50
         let partial = SimpleDoseRecommender().recommend(inputs, formula: DoseFormula())
         XCTAssertEqual(partial.bolusUnits ?? 0, 4.8, accuracy: 1e-9)
-        // (40 + 8) g / 10 g per U = 4.8 U, times 50 mg/dL per U
+        // (40 + 8) g / 10 g per U = 4.8 U, times 50 mg/dl per U
         XCTAssertEqual(partial.expectedRiseMgdl ?? 0, 240, accuracy: 1e-9)
         XCTAssertFalse(partial.isComplete)
         XCTAssertTrue(partial.missing.contains(.insulinOnBoard))

@@ -156,8 +156,9 @@ final class AcceptedFoodStore: ObservableObject {
     }
 }
 
-private func gramsText(_ grams: Double?) -> String {
-    grams.map { "\($0.formatted()) g" } ?? "Unavailable"
+/// Carbs are written in c and protein in p; fat stays in g.
+private func gramsText(_ grams: Double?, unit: String = "g") -> String {
+    grams.map { "\($0.formatted()) \(unit)" } ?? "Unavailable"
 }
 
 struct MacroPieChart: View {
@@ -206,15 +207,15 @@ private struct ManageView: View {
                     }
                     if let items = store.meal?.items, items.count > 1 {
                         ForEach(items) { item in
-                            LabeledContent(item.product.name, value: "\(item.servings.formatted()) × \(gramsText(item.totalCarbohydrates)) carbs")
+                            LabeledContent(item.product.name, value: "\(item.servings.formatted()) × \(gramsText(item.totalCarbohydrates, unit: "c")) carbs")
                         }
                     } else {
                         LabeledContent("Servings", value: food.servings.formatted())
                     }
                     MacroPieChart(food: food)
-                    LabeledContent("Total carbs", value: gramsText(food.totalCarbohydrates))
-                    LabeledContent("Net carbs", value: gramsText(food.netCarbohydrates))
-                    LabeledContent("Protein", value: gramsText(food.totalProtein))
+                    LabeledContent("Total carbs", value: gramsText(food.totalCarbohydrates, unit: "c"))
+                    LabeledContent("Net carbs", value: gramsText(food.netCarbohydrates, unit: "c"))
+                    LabeledContent("Protein", value: gramsText(food.totalProtein, unit: "p"))
                     LabeledContent("Fat", value: gramsText(food.totalFat))
                 }
                 if let draft = store.tidepoolDraft {
@@ -409,7 +410,7 @@ private struct G7Section: View {
                 }
                 if let latest = feed.readings.last {
                     LabeledContent("Last reading") {
-                        Text("\(Int(latest.milligramsPerDeciliter.rounded())) mg/dL, \(latest.date.formatted(date: .omitted, time: .shortened))")
+                        Text("\(Int(latest.milligramsPerDeciliter.rounded())) mg/dl, \(latest.date.formatted(date: .omitted, time: .shortened))")
                     }
                 }
                 Button("Check for new readings", action: refresh)

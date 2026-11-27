@@ -1,11 +1,11 @@
 import SwiftUI
 
 private func unitsText(_ units: Double?) -> String {
-    units.map { "\($0.formatted(.number.precision(.fractionLength(0...1)))) U" } ?? "—"
+    units.map { "\($0.formatted(.number.precision(.fractionLength(0...1)))) u" } ?? "—"
 }
 
 private func rateText(_ rate: Double?) -> String {
-    rate.map { "\($0.formatted(.number.precision(.fractionLength(0...2)))) U/h" } ?? "—"
+    rate.map { "\($0.formatted(.number.precision(.fractionLength(0...2)))) u/h" } ?? "—"
 }
 
 /// Dosing section of Manage: three tabs on top, the formula behind Advanced.
@@ -51,12 +51,12 @@ struct DosingSection: View {
     private var simple: some View {
         Group {
             LabeledContent("Carbs") {
-                numberField("Carbs", Binding(get: { dosing.simpleCarbs }, set: { dosing.simpleCarbs = $0 }), unit: "g")
+                numberField("Carbs", Binding(get: { dosing.simpleCarbs }, set: { dosing.simpleCarbs = $0 }), unit: "c")
             }
             LabeledContent("Protein") {
-                numberField("Protein", Binding(get: { dosing.simpleProtein }, set: { dosing.simpleProteinEntry = $0 }), unit: "g")
+                numberField("Protein", Binding(get: { dosing.simpleProtein }, set: { dosing.simpleProteinEntry = $0 }), unit: "p")
             }
-            Text("Grams are turned into units with the carb ratio in your insulin profile.")
+            Text("The c and p numbers are turned into units with the carb ratio in your insulin profile.")
                 .font(.footnote).foregroundStyle(.secondary)
             if dosing.simpleProteinEntry != nil {
                 Button("Protein = carbs ÷ \(Int(DosingStore.proteinDivisor))") { dosing.simpleProteinEntry = nil }
@@ -127,7 +127,7 @@ struct RecommendationView: View {
                 LabeledContent(part.label, value: signedUnits(part.units)).font(.footnote)
             }
             if let rise = recommendation.expectedRiseMgdl {
-                LabeledContent("Expected rise", value: "+\(rise.formatted(.number.precision(.fractionLength(0)))) mg/dL")
+                LabeledContent("Expected rise", value: "+\(rise.formatted(.number.precision(.fractionLength(0)))) mg/dl")
             }
             if let rate = recommendation.enhancedBasalUnitsPerHour, let minutes = recommendation.enhancedBasalMinutes {
                 LabeledContent("Enhanced basal", value: "+\(rateText(rate)) for \(minutes / 60) h \(minutes % 60) min")
@@ -146,7 +146,7 @@ struct RecommendationView: View {
     }
 
     private func signedUnits(_ units: Double) -> String {
-        "\(units >= 0 ? "+" : "−")\(abs(units).formatted(.number.precision(.fractionLength(0...2)))) U"
+        "\(units >= 0 ? "+" : "−")\(abs(units).formatted(.number.precision(.fractionLength(0...2)))) u"
     }
 }
 
@@ -164,15 +164,15 @@ struct DosingFooter: View {
             profiles: profileStore, dosing: dosing, glucose: feed.readings.last)
         Grid(horizontalSpacing: 8, verticalSpacing: 10) {
             GridRow {
-                cell(grams(food?.totalCarbohydrates), "Carbohydrate", "Carbs in the meal (g)")
-                cell(grams(food?.totalProtein), "Protein", "Protein in the meal (g)")
-                cell(grams(food?.totalFat), "Fat", "Fat in the meal (g)")
+                cell(grams(food?.totalCarbohydrates, "c"), "Carbohydrate", "Carbs in the meal (c)")
+                cell(grams(food?.totalProtein, "p"), "Protein", "Protein in the meal (p)")
+                cell(grams(food?.totalFat, "g"), "Fat", "Fat in the meal (g)")
             }
             Divider()
             GridRow {
-                cell(unitsText(recommendation.bolusUnits), "Bolus", recommendation.isComplete ? "Recommended (U)" : "Incomplete (U)")
+                cell(unitsText(recommendation.bolusUnits), "Bolus", recommendation.isComplete ? "Recommended (u)" : "Incomplete (u)")
                 cell(rateText(recommendation.enhancedBasalUnitsPerHour.map { $0 + (currentBasal ?? 0) } ?? currentBasal),
-                     "Basal", recommendation.enhancedBasalUnitsPerHour == nil ? "Current rate (U/h)" : "Enhanced rate (U/h)")
+                     "Basal", recommendation.enhancedBasalUnitsPerHour == nil ? "Current rate (u/h)" : "Enhanced rate (u/h)")
                 cell(recommendation.enhancedBasalMinutes.map { "\($0) min" } ?? "—", "Enhanced for", "Basal boost length")
             }
         }
@@ -183,8 +183,8 @@ struct DosingFooter: View {
 
     private var currentBasal: Double? { profileStore.segment(at: Date())?.basalUnitsPerHour }
 
-    private func grams(_ value: Double?) -> String {
-        value.map { "\($0.formatted()) g" } ?? "Unavailable"
+    private func grams(_ value: Double?, _ unit: String) -> String {
+        value.map { "\($0.formatted()) \(unit)" } ?? "Unavailable"
     }
 
     private func cell(_ value: String, _ title: String, _ definition: String) -> some View {

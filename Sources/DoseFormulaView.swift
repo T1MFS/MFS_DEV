@@ -117,13 +117,13 @@ struct DoseFormulaHelpView: View {
                 """)
                 section("Insulin action side", """
                 B(t) above is the food side only. The insulin side is stored data, not yet a computed model.
-                Insulin profiles (Manage > menu > Insulin profiles): time frames, each with basal (units/hour) and sensitivity (mg/dL one unit lowers glucose). The Main profile or a hand-chosen alternative is active; automatic switching has an extension point but no hooks.
+                Insulin profiles (Manage > menu > Insulin profiles): time frames, each with basal (units/hour) and sensitivity (mg/dl one unit lowers glucose). The Main profile or a hand-chosen alternative is active; automatic switching has an extension point but no hooks.
                 Insulin table: population half-life and duration per insulin type (for example rapid-acting about 1 hour half-life, 3–5 hours duration). Reference only; not dosing advice and not used in any calculation.
                 """)
                 section("How the models combine", """
                 The food model and the insulin model are independent; neither is folded into the other. Predicted glucose is their simple sum:
                 predicted glucose(t) = starting glucose + food model(t) + insulin model(t)
-                The insulin term lowers glucose. Any future model would be another independent term. Not built yet: the insulin model and the sum. B(t) is in model units per gram until fitted to mg/dL, so the terms cannot be added meaningfully yet.
+                The insulin term lowers glucose. Any future model would be another independent term. Not built yet: the insulin model and the sum. B(t) is in model units per gram until fitted to mg/dl, so the terms cannot be added meaningfully yet.
                 """, mono: true)
                 section("Limits", """
                 Shapes are hand-chosen and expected to be fitted to data later. Fat affects timing only; person-specific effects of fat on insulin are not modelled. Glucose level does not enter the formula. Results are relative until fitted.

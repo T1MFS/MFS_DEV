@@ -71,7 +71,7 @@ struct DoseRecommendation: Equatable {
     var bolusUnits: Double?
     var enhancedBasalUnitsPerHour: Double?
     var enhancedBasalMinutes: Int?
-    /// Glucose rise the meal is expected to cause without insulin, in mg/dL.
+    /// Glucose rise the meal is expected to cause without insulin, in mg/dl.
     var expectedRiseMgdl: Double?
     /// Inputs that were not available. The recommendation is incomplete while this is not empty.
     var missing: [DoseInput] = []

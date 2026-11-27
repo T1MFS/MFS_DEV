@@ -6,6 +6,19 @@ A standalone SwiftUI iOS app with sections for **Manage**, **Food**, and **Evalu
 
 Open `MFS.xcodeproj`, select the MFS scheme, choose an iOS Simulator, and run. The shared `MFSTests` scheme includes a fixture-based scan test using `IMG_0270.HEIC` and a stubbed Open Food Facts response.
 
+## Units and notation
+
+Use the same notation in the app, code comments, docs and conversation:
+
+| Quantity | Write | Example |
+|---|---|---|
+| Carbohydrate grams | `c` (not g) | 40 c |
+| Protein grams | `p` (not g) | 8 p |
+| Glucose | `mg/dl` | 120 mg/dl |
+| Insulin | `units` or `u` | 4.8 u, 0.9 u/h |
+
+Derived units follow the same letters: carb ratio is `c per u`, sensitivity is `mg/dl per u`. Fat and fiber grams stay `g`.
+
 ## Local Tidepool nutrition mapping
 
 Verified 2026-09-27 against Tidepool's authoritative [Food documentation](https://tidepool.redocly.app/docs/device-data/data-types/food) and [API schema repository](https://github.com/tidepool-org/TidepoolApi/tree/89007e44d8d03bacdb7f74c454cb8bebbc9889f5). Schema files: `reference/common/models/nutrition.v1.yaml`, `energy/kilocalories.v1.yaml`, `reference/data/models/food/food.v1.yaml`, and `reference/data/models/amount.v1.yaml`.
@@ -65,7 +78,7 @@ Manage > Dosing > Advanced: dose formula edits toy model two: B(t) = b + C·(s *
 
 Manage toolbar menu:
 
-- **Insulin profiles**: one Main profile plus any number of alternatives (for example "Sick"). Each profile has time frames (6am-11am, 11am-4pm, ...), each with basal (units/hour) and sensitivity (mg/dL one unit lowers glucose). Alternatives are selected by hand with Use / Back to main and stay in effect until changed. `ProfileSwitchHook` is the extension point for automatic switching; none are registered, and a manual choice is never overridden by a hook. No default values are supplied.
+- **Insulin profiles**: one Main profile plus any number of alternatives (for example "Sick"). Each profile has time frames (6am-11am, 11am-4pm, ...), each with basal (units/hour) and sensitivity (mg/dl one unit lowers glucose). Alternatives are selected by hand with Use / Back to main and stay in effect until changed. `ProfileSwitchHook` is the extension point for automatic switching; none are registered, and a manual choice is never overridden by a hook. No default values are supplied.
 - **Service connections**: connection details only, no data format. A service has a name, https address and one of: none, shared secret in a header (Nightscout preset: `api-secret`, optionally SHA-1 hashed), bearer token, or a client certificate for mutual TLS (import a `.p12`). Secrets and certificates are stored in the Keychain.
 - **Apple Health** (read only): pulse rate, sleep and heart rate variability. This needs the HealthKit capability on the App ID and provisioning profile (`Sources/MFS.entitlements`). The app never writes to Apple Health (`requestAuthorization(toShare: [])`), but the bundled LoopKit contains HealthKit write code, so App Store Connect requires `NSHealthUpdateUsageDescription` in addition to `NSHealthShareUsageDescription`; both are set in the build settings.
 - **Biometrics to DigitalMe**: heart rate (`heartRate`, bpm), heart rate variability (`heartRateVariability`, ms) and nightly sleep (`sleepDuration`, minutes) are mapped to the Tidepool-format `biometric` type defined in [TidepoolApi_extended](https://github.com/fx2-t1d/TidepoolApi_extended) and sent with `DigitalMeUploadClient.upload(records:to: .biometrics, ...)` to DigitalMe's `POST /biometrics/upload`, over the same mTLS connection and security checks as other uploads. A biometric is a measurement of the body's state at a point in time; glucose is never sent this way and keeps `cbg`/`smbg`. `HealthBiometricReader` reads only new samples (anchored queries); save the returned `BiometricBatch.pendingState` only after the upload succeeds.

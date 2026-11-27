@@ -76,6 +76,7 @@ final class EvaluateBiometrics: ObservableObject {
 /// of the values shown, because the units differ.
 struct EvaluateView: View {
     @EnvironmentObject private var feed: GlucoseFeed
+    @EnvironmentObject private var actions: DeviceActions
     @StateObject private var biometrics = EvaluateBiometrics()
     @State private var enabled: Set<EvaluateSeries> = [.glucose]
     @State private var hours = 24
@@ -87,13 +88,18 @@ struct EvaluateView: View {
         return end.addingTimeInterval(-TimeInterval(hours) * 3600)...end
     }
 
-    /// Insulin amounts are not recorded by the pump history yet (it keeps event titles only).
     private func points(for series: EvaluateSeries) -> [(date: Date, value: Double)] {
         switch series {
         case .glucose:
             return feed.readings.map { ($0.date, $0.milligramsPerDeciliter) }
-        case .insulinOnBoard, .bolus, .basal:
-            return []
+        case .insulinOnBoard:
+            let doses = actions.insulinDoses
+            return doses.isEmpty ? [] : InsulinOnBoard.timeline(doses: doses, from: domain.lowerBound, to: domain.upperBound)
+                .map { ($0.date, $0.units) }
+        case .bolus:
+            return actions.insulinDoses.filter { $0.kind == .bolus }.map { ($0.start, $0.units) }
+        case .basal:
+            return actions.insulinDoses.filter { $0.kind == .basal }.flatMap { [($0.start, $0.amount), ($0.end, $0.amount)] }
         case .heartRate, .heartRateVariability, .sleep:
             return (series.metric.flatMap { biometrics.samples[$0] } ?? []).map { ($0.time, $0.value) }
         }
@@ -130,7 +136,7 @@ struct EvaluateView: View {
             } header: {
                 Text("Insulin")
             } footer: {
-                Text("Pump history does not record dose amounts yet, so the insulin parts have no data to draw.")
+                Text("From the paired pump's history. Insulin on board counts boluses only, using Loop's rapid-acting model (6 h, 75 min peak).")
             }
             Section {
                 ForEach(EvaluateSeries.biometrics) { toggle($0) }
@@ -171,7 +177,7 @@ struct EvaluateView: View {
         Chart {
             ForEach(EvaluateSeries.allCases.filter { enabled.contains($0) }) { series in
                 ForEach(Array(scaled(series).enumerated()), id: \.offset) { _, point in
-                    if series == .sleep {
+                    if series == .sleep || series == .bolus {
                         PointMark(x: .value("Time", point.date), y: .value("Scaled", point.value))
                             .foregroundStyle(series.color)
                     } else {

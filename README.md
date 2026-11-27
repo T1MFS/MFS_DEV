@@ -19,6 +19,20 @@ Use the same notation in the app, code comments, docs and conversation:
 
 Derived units follow the same letters: carb ratio is `c per u`, sensitivity is `mg/dl per u`. Fat and fiber grams stay `g`.
 
+## Loop and LoopKit compatibility
+
+All conversions live in `Sources/LoopKitBridge.swift` (the only file that maps between MFS and LoopKit types); the maths is in LoopKit-free files so tests cover it.
+
+| Direction | Rule |
+|---|---|
+| CGM sample in | `NewGlucoseSample` quantity is read as mg/dl; readings go back out with sync identifier `mfs-glucose-<epoch>` |
+| Profile out | Basal (u/h), sensitivity (mg/dl per u), carb ratio (c per u), target (range with equal ends) become Loop daily schedules; a midnight item carries the wrap-around value because Loop and pump schedules start at 0:00. nil if any time frame lacks the value |
+| Profile in | Sensitivity converted to mg/dl, target range becomes its midpoint; time frames start at every change in any schedule |
+| Pump events in | `NewPumpEvent.dose` is kept (bolus u, temp basal u/h and end time); older saved history without doses still loads |
+| Insulin on board | Same exponential model as LoopKit (6 h, 75 min peak, 10 min delay). Boluses only; scheduled basal is not netted out |
+
+MFS stays read-only toward the pump: no delivery commands are sent (see `docs/REMOTE_CONTROL_POLICY.md`). Not yet handled: mmol/L display, time zones other than the device's, 0.05 u pump rounding of imported schedules.
+
 ## Local Tidepool nutrition mapping
 
 Verified 2026-09-27 against Tidepool's authoritative [Food documentation](https://tidepool.redocly.app/docs/device-data/data-types/food) and [API schema repository](https://github.com/tidepool-org/TidepoolApi/tree/89007e44d8d03bacdb7f74c454cb8bebbc9889f5). Schema files: `reference/common/models/nutrition.v1.yaml`, `energy/kilocalories.v1.yaml`, `reference/data/models/food/food.v1.yaml`, and `reference/data/models/amount.v1.yaml`.

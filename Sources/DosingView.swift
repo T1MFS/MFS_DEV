@@ -16,6 +16,7 @@ struct DosingSection: View {
     @EnvironmentObject private var formulaStore: DoseFormulaStore
     @EnvironmentObject private var profileStore: InsulinProfileStore
     @EnvironmentObject private var feed: GlucoseFeed
+    @EnvironmentObject private var actions: DeviceActions
 
     var body: some View {
         Section("Dosing") {
@@ -33,7 +34,8 @@ struct DosingSection: View {
         Section("Recommendation") {
             RecommendationView(recommendation: DosingSummary.recommendation(
                 mode: dosing.mode, food: foodStore.food, formula: formulaStore.formula,
-                profiles: profileStore, dosing: dosing, glucose: feed.readings.last))
+                profiles: profileStore, dosing: dosing, glucose: feed.readings.last,
+                iob: RecordedInsulinOnBoard(doses: actions.insulinDoses)))
         }
         Section {
             NavigationLink("Advanced: dose formula") { DoseFormulaView() }
@@ -108,9 +110,10 @@ enum DosingSummary {
     }
 
     static func recommendation(mode: DosingMode, food: AcceptedFood?, formula: DoseFormula, profiles: InsulinProfileStore,
-                               dosing: DosingStore, glucose: GlucoseReading?) -> DoseRecommendation {
+                               dosing: DosingStore, glucose: GlucoseReading?,
+                               iob: InsulinOnBoardSource = UnavailableInsulinOnBoard()) -> DoseRecommendation {
         DoseRecommenders.recommender(for: mode)
-            .recommend(inputs(food: food, profiles: profiles, dosing: dosing, glucose: glucose), formula: formula)
+            .recommend(inputs(food: food, profiles: profiles, dosing: dosing, glucose: glucose, iob: iob), formula: formula)
     }
 }
 
@@ -157,11 +160,13 @@ struct DosingFooter: View {
     @EnvironmentObject private var formulaStore: DoseFormulaStore
     @EnvironmentObject private var profileStore: InsulinProfileStore
     @EnvironmentObject private var feed: GlucoseFeed
+    @EnvironmentObject private var actions: DeviceActions
 
     var body: some View {
         let recommendation = DosingSummary.recommendation(
             mode: dosing.mode, food: food, formula: formulaStore.formula,
-            profiles: profileStore, dosing: dosing, glucose: feed.readings.last)
+            profiles: profileStore, dosing: dosing, glucose: feed.readings.last,
+            iob: RecordedInsulinOnBoard(doses: actions.insulinDoses))
         Grid(horizontalSpacing: 8, verticalSpacing: 10) {
             GridRow {
                 cell(grams(food?.totalCarbohydrates, "c"), "Carbohydrate", "Carbs in the meal (c)")

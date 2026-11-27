@@ -36,7 +36,7 @@ class CGMHostBase: NSObject, CGMManagerDelegate {
             log.update(name) { $0.callbacks += 1; $0.lastResult = description; $0.lastResultAt = Date() }
             return
         }
-        let new = samples.map { GlucoseReading(date: $0.date, milligramsPerDeciliter: $0.quantity.doubleValue(for: .milligramsPerDeciliter)) }
+        let new = samples.map(GlucoseReading.init(sample:))
         lock.lock()
         if let newest = new.map(\.date).max() {
             latestDate = max(latestDate ?? newest, newest)

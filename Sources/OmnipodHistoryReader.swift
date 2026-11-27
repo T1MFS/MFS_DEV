@@ -15,6 +15,13 @@ final class OmnipodHistoryReader: NSObject, ObservableObject, PumpManagerDelegat
     struct HistoryEvent: Hashable, Codable {
         let date: Date
         let title: String
+        /// From the pump kit's dose: "bolus", "tempBasal", "basal", "suspend" or "resume"; nil for events without a dose.
+        var doseKind: String? = nil
+        /// Bolus units delivered.
+        var units: Double? = nil
+        /// Basal rate in units per hour, running until `endDate`.
+        var unitsPerHour: Double? = nil
+        var endDate: Date? = nil
     }
 
     struct ReservoirReading: ReservoirValue, Equatable {
@@ -90,10 +97,12 @@ final class OmnipodHistoryReader: NSObject, ObservableObject, PumpManagerDelegat
     // MARK: PumpManagerDelegate
 
     func pumpManager(_ pumpManager: PumpManager, hasNewPumpEvents events: [NewPumpEvent], lastReconciliation: Date?, replacePendingEvents: Bool) async throws {
-        let new = events.map { HistoryEvent(date: $0.date, title: $0.title) }
+        let new = events.map { HistoryEvent($0) }
         await MainActor.run {
-            let known = Set(self.history)
-            self.history = (self.history + new.filter { !known.contains($0) }).sorted { $0.date < $1.date }
+            // Same moment and title is the same event; the newer record carries the dose amounts.
+            var byKey: [String: HistoryEvent] = [:]
+            for event in self.history + new { byKey["\(event.date.timeIntervalSince1970)|\(event.title)"] = event }
+            self.history = byKey.values.sorted { $0.date < $1.date }
             self.historyStore.save(self.history)
         }
     }

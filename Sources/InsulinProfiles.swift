@@ -16,6 +16,12 @@ struct ProfileSegment: Identifiable, Codable, Equatable {
     var targetMgdl: Double? = nil
 }
 
+/// One step of a daily schedule in Loop's terms: seconds after midnight and a value.
+struct ScheduleItem: Equatable {
+    var startTime: TimeInterval
+    var value: Double
+}
+
 struct InsulinProfile: Identifiable, Codable, Equatable {
     var id = UUID()
     var name: String
@@ -47,6 +53,39 @@ struct InsulinProfile: Identifiable, Codable, Equatable {
             if !segment.sensitivityMgdlPerUnit.isFinite || segment.sensitivityMgdlPerUnit <= 0 { found.append("Sensitivity must be more than 0 mg/dl per unit.") }
         }
         return Array(Set(found)).sorted()
+    }
+
+    /// Items for a Loop daily schedule built from one value of each time frame.
+    /// Loop schedules start at midnight, so when the first time frame starts later, midnight takes the value that wraps around.
+    /// nil when there are no time frames or any frame lacks the value.
+    func scheduleItems(_ value: (ProfileSegment) -> Double?) -> [ScheduleItem]? {
+        var items: [ScheduleItem] = []
+        for segment in sortedSegments {
+            guard let v = value(segment) else { return nil }
+            items.append(ScheduleItem(startTime: TimeInterval(segment.startMinute * 60), value: v))
+        }
+        guard let first = items.first, let last = items.last else { return nil }
+        if first.startTime > 0 { items.insert(ScheduleItem(startTime: 0, value: last.value), at: 0) }
+        return items
+    }
+
+    /// Builds a profile from Loop-style schedules: sensitivity in mg/dl per u, carb ratio in c per u, target in mg/dl.
+    /// Each time frame starts wherever any schedule changes (to the minute); schedules wrap past midnight.
+    static func make(name: String, basal: [ScheduleItem], sensitivity: [ScheduleItem],
+                     carbRatio: [ScheduleItem]? = nil, target: [ScheduleItem]? = nil) -> InsulinProfile? {
+        func value(_ items: [ScheduleItem]?, atMinute minute: Int) -> Double? {
+            guard let items, !items.isEmpty else { return nil }
+            let sorted = items.sorted { $0.startTime < $1.startTime }
+            return (sorted.last { Int($0.startTime / 60) <= minute } ?? sorted.last)?.value
+        }
+        let starts = Set([basal, sensitivity, carbRatio ?? [], target ?? []].flatMap { $0 }.map { Int($0.startTime / 60) })
+        guard !basal.isEmpty, !sensitivity.isEmpty, starts.allSatisfy({ (0..<1440).contains($0) }) else { return nil }
+        let segments = starts.sorted().compactMap { minute -> ProfileSegment? in
+            guard let b = value(basal, atMinute: minute), let s = value(sensitivity, atMinute: minute) else { return nil }
+            return ProfileSegment(startMinute: minute, basalUnitsPerHour: b, sensitivityMgdlPerUnit: s,
+                                  carbRatioGramsPerUnit: value(carbRatio, atMinute: minute), targetMgdl: value(target, atMinute: minute))
+        }
+        return InsulinProfile(name: name, segments: segments)
     }
 
     static func minuteOfDay(_ date: Date, calendar: Calendar = .current) -> Int {

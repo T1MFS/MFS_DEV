@@ -9,3 +9,5 @@ Work is organized as **Epic → User story → Task → Subtask**. There is one 
 Status reflects the repository at the time of writing; see the [project README](../README.md) for behavior details.
 
 Units and notation (c for carbohydrate grams, p for protein grams, mg/dl for glucose, units or u for insulin) are defined in the [project README](../README.md#units-and-notation).
+
+Prediction visualization and model plug-in contract: [PREDICTION_API.md](PREDICTION_API.md).

@@ -51,11 +51,13 @@ struct DosingSection: View {
     private var simple: some View {
         Group {
             LabeledContent("Carbs") {
-                numberField("Carbs", Binding(get: { dosing.simpleCarbs }, set: { dosing.simpleCarbs = $0 }), unit: "U")
+                numberField("Carbs", Binding(get: { dosing.simpleCarbs }, set: { dosing.simpleCarbs = $0 }), unit: "g")
             }
             LabeledContent("Protein") {
-                numberField("Protein", Binding(get: { dosing.simpleProtein }, set: { dosing.simpleProteinEntry = $0 }), unit: "U")
+                numberField("Protein", Binding(get: { dosing.simpleProtein }, set: { dosing.simpleProteinEntry = $0 }), unit: "g")
             }
+            Text("Grams are turned into units with the carb ratio in your insulin profile.")
+                .font(.footnote).foregroundStyle(.secondary)
             if dosing.simpleProteinEntry != nil {
                 Button("Protein = carbs ÷ \(Int(DosingStore.proteinDivisor))") { dosing.simpleProteinEntry = nil }
                     .font(.footnote)
@@ -101,7 +103,7 @@ enum DosingSummary {
             targetMgdl: segment?.targetMgdl,
             insulinOnBoard: iob.units(at: now),
             basalUnitsPerHour: segment?.basalUnitsPerHour,
-            simpleCarbUnits: dosing.simpleCarbs, simpleProteinUnits: dosing.simpleProtein,
+            simpleCarbGrams: dosing.simpleCarbs, simpleProteinGrams: dosing.simpleProtein,
             mealHistoryBolus: food.flatMap { history.bolusUnits(forMealNamed: $0.product.name) })
     }
 
@@ -123,6 +125,9 @@ struct RecommendationView: View {
             }
             ForEach(recommendation.parts) { part in
                 LabeledContent(part.label, value: signedUnits(part.units)).font(.footnote)
+            }
+            if let rise = recommendation.expectedRiseMgdl {
+                LabeledContent("Expected rise", value: "+\(rise.formatted(.number.precision(.fractionLength(0)))) mg/dL")
             }
             if let rate = recommendation.enhancedBasalUnitsPerHour, let minutes = recommendation.enhancedBasalMinutes {
                 LabeledContent("Enhanced basal", value: "+\(rateText(rate)) for \(minutes / 60) h \(minutes % 60) min")

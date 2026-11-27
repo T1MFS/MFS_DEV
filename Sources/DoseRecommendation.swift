@@ -51,9 +51,9 @@ struct DoseInputs: Equatable {
     var targetMgdl: Double?
     var insulinOnBoard: Double?
     var basalUnitsPerHour: Double?
-    /// Simple tab numbers, in units.
-    var simpleCarbUnits: Double?
-    var simpleProteinUnits: Double?
+    /// Simple tab numbers, in grams.
+    var simpleCarbGrams: Double?
+    var simpleProteinGrams: Double?
     /// Units a past evaluation of this meal settled on; nil while none exist.
     var mealHistoryBolus: Double?
 }
@@ -71,6 +71,8 @@ struct DoseRecommendation: Equatable {
     var bolusUnits: Double?
     var enhancedBasalUnitsPerHour: Double?
     var enhancedBasalMinutes: Int?
+    /// Glucose rise the meal is expected to cause without insulin, in mg/dL.
+    var expectedRiseMgdl: Double?
     /// Inputs that were not available. The recommendation is incomplete while this is not empty.
     var missing: [DoseInput] = []
 
@@ -112,13 +114,30 @@ extension DoseRecommender {
     }
 }
 
-/// Simple tab: the carbs and protein bolus numbers typed in.
+/// Simple tab: the carbs and protein grams typed in, each covered at the profile's carb ratio.
+/// Toy model: protein is covered like carbs, and the rise is the meal units times sensitivity.
 struct SimpleDoseRecommender: DoseRecommender {
     func recommend(_ inputs: DoseInputs, formula: DoseFormula) -> DoseRecommendation {
         var result = DoseRecommendation(mode: .simple)
-        if inputs.simpleCarbUnits == nil { result.missing.append(.mealNutrition) }
-        if let carbs = inputs.simpleCarbUnits { result.parts.append(.init(label: "Carbs", units: carbs)) }
-        if let protein = inputs.simpleProteinUnits { result.parts.append(.init(label: "Protein", units: protein)) }
+        if inputs.simpleCarbGrams == nil { result.missing.append(.mealNutrition) }
+        guard let ratio = inputs.carbRatioGramsPerUnit, ratio > 0 else {
+            result.missing.append(.carbRatio)
+            return finish(result, inputs: inputs)
+        }
+        var mealUnits = 0.0
+        if let carbs = inputs.simpleCarbGrams {
+            result.parts.append(.init(label: "Carbs", units: carbs / ratio))
+            mealUnits += carbs / ratio
+        }
+        if let protein = inputs.simpleProteinGrams {
+            result.parts.append(.init(label: "Protein", units: protein / ratio))
+            mealUnits += protein / ratio
+        }
+        if let sensitivity = inputs.sensitivityMgdlPerUnit, !result.parts.isEmpty {
+            result.expectedRiseMgdl = mealUnits * sensitivity
+        } else {
+            result.missing.append(.sensitivity)
+        }
         return finish(result, inputs: inputs)
     }
 }
@@ -137,6 +156,7 @@ struct ExperimentalDoseRecommender: DoseRecommender {
             result.parts.append(.init(label: "Meal bolus", units: dose.bolusUnits))
             result.enhancedBasalUnitsPerHour = dose.extraBasalUnitsPerHour
             result.enhancedBasalMinutes = dose.extraBasalMinutes
+            result.expectedRiseMgdl = dose.riseMgdl
         }
         return finish(result, inputs: inputs)
     }

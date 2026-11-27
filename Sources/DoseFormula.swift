@@ -88,6 +88,8 @@ struct ExperimentalDose: Equatable {
     var bolusUnits: Double
     var extraBasalUnitsPerHour: Double
     var extraBasalMinutes: Int
+    /// Total modelled glucose rise the dose offsets, in mg/dL.
+    var riseMgdl: Double
 }
 
 extension DoseFormula {
@@ -107,7 +109,8 @@ extension DoseFormula {
         let extraBasal = tailMinutes > 0 ? tailArea / sensitivityMgdlPerUnit / (Double(tailMinutes) / 60) : 0
         return ExperimentalDose(bolusUnits: bolusArea / sensitivityMgdlPerUnit,
                                 extraBasalUnitsPerHour: extraBasal,
-                                extraBasalMinutes: tailMinutes)
+                                extraBasalMinutes: tailMinutes,
+                                riseMgdl: bolusArea + tailArea)
     }
 }
 
@@ -131,8 +134,9 @@ final class DosingStore: ObservableObject {
     static let proteinDivisor = 5.0
 
     @Published var mode: DosingMode { didSet { defaults.set(mode.rawValue, forKey: key) } }
+    /// Grams of carbohydrate.
     @Published var simpleCarbs: Double?
-    /// nil while the user has not typed a protein number; then protein follows carbs.
+    /// Grams of protein. nil while the user has not typed a number; then protein follows carbs.
     @Published var simpleProteinEntry: Double?
 
     private let defaults: UserDefaults

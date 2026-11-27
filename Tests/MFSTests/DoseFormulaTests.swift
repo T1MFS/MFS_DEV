@@ -66,17 +66,20 @@ final class DoseFormulaTests: XCTestCase {
 
     func testSimpleRecommendationAddsPartsAndListsMissingInputs() {
         var inputs = DoseInputs()
-        inputs.simpleCarbUnits = 4
-        inputs.simpleProteinUnits = 0.8
+        inputs.simpleCarbGrams = 40
+        inputs.simpleProteinGrams = 8
+        inputs.carbRatioGramsPerUnit = 10
+        inputs.sensitivityMgdlPerUnit = 50
         let partial = SimpleDoseRecommender().recommend(inputs, formula: DoseFormula())
         XCTAssertEqual(partial.bolusUnits ?? 0, 4.8, accuracy: 1e-9)
+        // (40 + 8) g / 10 g per U = 4.8 U, times 50 mg/dL per U
+        XCTAssertEqual(partial.expectedRiseMgdl ?? 0, 240, accuracy: 1e-9)
         XCTAssertFalse(partial.isComplete)
         XCTAssertTrue(partial.missing.contains(.insulinOnBoard))
         XCTAssertTrue(partial.missing.contains(.glucose))
 
         inputs.glucose = 200
         inputs.targetMgdl = 100
-        inputs.sensitivityMgdlPerUnit = 50
         inputs.insulinOnBoard = 1
         let full = SimpleDoseRecommender().recommend(inputs, formula: DoseFormula())
         // 4 + 0.8 + (200-100)/50 - 1
@@ -86,12 +89,18 @@ final class DoseFormulaTests: XCTestCase {
 
     func testRecommendationNeverNegativeAndMealSpecificIsPlaceholder() {
         var inputs = DoseInputs()
-        inputs.simpleCarbUnits = 1
+        inputs.simpleCarbGrams = 10
+        inputs.carbRatioGramsPerUnit = 10
         inputs.glucose = 60
         inputs.targetMgdl = 100
         inputs.sensitivityMgdlPerUnit = 20
         inputs.insulinOnBoard = 0
         XCTAssertEqual(SimpleDoseRecommender().recommend(inputs, formula: DoseFormula()).bolusUnits, 0)
+
+        inputs.carbRatioGramsPerUnit = nil
+        let noRatio = SimpleDoseRecommender().recommend(inputs, formula: DoseFormula())
+        XCTAssertTrue(noRatio.missing.contains(.carbRatio))
+        XCTAssertNil(noRatio.expectedRiseMgdl)
 
         let meal = MealSpecificDoseRecommender().recommend(DoseInputs(), formula: DoseFormula())
         XCTAssertNil(meal.bolusUnits)

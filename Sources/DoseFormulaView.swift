@@ -1,49 +1,44 @@
 import SwiftUI
 
 /// Edits the seven factors of toy model two and previews the curve for the accepted food.
+/// Pushed from the Advanced row of the Dosing section.
 struct DoseFormulaView: View {
     @EnvironmentObject private var formulaStore: DoseFormulaStore
     @EnvironmentObject private var foodStore: AcceptedFoodStore
-    @Environment(\.dismiss) private var dismiss
     @State private var showHelp = false
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    Text("B(t) = b + C·(s * [A1·carbs·g_fast + A2·protein·g_hold])(t)")
-                        .font(.footnote.monospaced())
-                    Text("B(t) is the impact on blood glucose t minutes after eating. Carbohydrate (net of fiber, below) drives g_fast, which peaks at t1. Protein drives g_hold, a flat top centered at t2 (120 min hold, 60 min edge width, both fixed). Fat adds no glucose; it only sets the time smear s, whose width is σ minutes per gram of fat.")
-                        .font(.footnote).foregroundStyle(.secondary)
-                }
-                Section("Times (minutes)") {
-                    field("t1  fast peak", $formulaStore.formula.fastPeakMinutes)
-                    field("t2  slow hold center", $formulaStore.formula.slowCenterMinutes)
-                    field("σ  smear per g fat", $formulaStore.formula.smearMinutesPerGramFat)
-                }
-                Section("Amplitudes") {
-                    field("A1  carbs (fast)", $formulaStore.formula.fastAmplitude)
-                    field("A2  protein (slow)", $formulaStore.formula.slowAmplitude)
-                    field("C  overall scale", $formulaStore.formula.scale)
-                }
-                Section("Offset") {
-                    field("b  baseline", $formulaStore.formula.offset)
-                }
-                Section("Carbohydrate") {
-                    Picker("Fiber", selection: $formulaStore.formula.fiber) {
-                        ForEach(CarbFiberTreatment.allCases) { Text($0.label).tag($0) }
-                    }
-                }
-                Section("Preview") { preview }
+        Form {
+            Section {
+                Text("B(t) = b + C·(s * [A1·carbs·g_fast + A2·protein·g_hold])(t)")
+                    .font(.footnote.monospaced())
+                Text("B(t) is the impact on blood glucose t minutes after eating. Carbohydrate (net of fiber, below) drives g_fast, which peaks at t1. Protein drives g_hold, a flat top centered at t2 (120 min hold, 60 min edge width, both fixed). Fat adds no glucose; it only sets the time smear s, whose width is σ minutes per gram of fat.")
+                    .font(.footnote).foregroundStyle(.secondary)
             }
-            .navigationTitle("Dose formula")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Help") { showHelp = true } }
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            Section("Times (minutes)") {
+                field("t1  fast peak", $formulaStore.formula.fastPeakMinutes)
+                field("t2  slow hold center", $formulaStore.formula.slowCenterMinutes)
+                field("σ  smear per g fat", $formulaStore.formula.smearMinutesPerGramFat)
             }
-            .sheet(isPresented: $showHelp) { DoseFormulaHelpView() }
+            Section("Amplitudes") {
+                field("A1  carbs (fast)", $formulaStore.formula.fastAmplitude)
+                field("A2  protein (slow)", $formulaStore.formula.slowAmplitude)
+                field("C  overall scale", $formulaStore.formula.scale)
+            }
+            Section("Offset") {
+                field("b  baseline", $formulaStore.formula.offset)
+            }
+            Section("Carbohydrate") {
+                Picker("Fiber", selection: $formulaStore.formula.fiber) {
+                    ForEach(CarbFiberTreatment.allCases) { Text($0.label).tag($0) }
+                }
+            }
+            Section("Preview") { preview }
         }
+        .navigationTitle("Dose formula")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { ToolbarItem(placement: .primaryAction) { Button("Help") { showHelp = true } } }
+        .sheet(isPresented: $showHelp) { DoseFormulaHelpView() }
     }
 
     private func field(_ title: String, _ value: Binding<Double>) -> some View {
@@ -122,13 +117,13 @@ struct DoseFormulaHelpView: View {
                 """)
                 section("Insulin action side", """
                 B(t) above is the food side only. The insulin side is stored data, not yet a computed model.
-                Insulin profiles (Manage > menu > Insulin profiles): time frames, each with basal (units/hour) and sensitivity (mg/dL one unit lowers glucose). The Main profile or a hand-chosen alternative is active; automatic switching has an extension point but no hooks.
+                Insulin profiles (Manage > menu > Insulin profiles): time frames, each with basal (units/hour) and sensitivity (mg/dl one unit lowers glucose). The Main profile or a hand-chosen alternative is active; automatic switching has an extension point but no hooks.
                 Insulin table: population half-life and duration per insulin type (for example rapid-acting about 1 hour half-life, 3–5 hours duration). Reference only; not dosing advice and not used in any calculation.
                 """)
                 section("How the models combine", """
                 The food model and the insulin model are independent; neither is folded into the other. Predicted glucose is their simple sum:
                 predicted glucose(t) = starting glucose + food model(t) + insulin model(t)
-                The insulin term lowers glucose. Any future model would be another independent term. Not built yet: the insulin model and the sum. B(t) is in model units per gram until fitted to mg/dL, so the terms cannot be added meaningfully yet.
+                The insulin term lowers glucose. Any future model would be another independent term. Not built yet: the insulin model and the sum. B(t) is in model units per gram until fitted to mg/dl, so the terms cannot be added meaningfully yet.
                 """, mono: true)
                 section("Limits", """
                 Shapes are hand-chosen and expected to be fitted to data later. Fat affects timing only; person-specific effects of fat on insulin are not modelled. Glucose level does not enter the formula. Results are relative until fitted.

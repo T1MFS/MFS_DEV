@@ -19,7 +19,7 @@ enum GlucoseTrend: Equatable {
         }
     }
 
-    /// Classifies a rate in mg/dL per minute.
+    /// Classifies a rate in mg/dl per minute.
     init(rate: Double) {
         switch rate {
         case 2...: self = .risingFast
@@ -32,7 +32,7 @@ enum GlucoseTrend: Equatable {
 }
 
 enum GlucoseTrendCalculator {
-    /// Rate of change in mg/dL per minute over the window ending at the latest reading.
+    /// Rate of change in mg/dl per minute over the window ending at the latest reading.
     static func rate(of readings: [GlucoseReading], window: TimeInterval = 15 * 60) -> Double? {
         guard let latest = readings.max(by: { $0.date < $1.date }) else { return nil }
         let recent = readings.filter { latest.date.timeIntervalSince($0.date) <= window }
@@ -67,7 +67,7 @@ struct ForecastContext {
     var doses: [DoseEvent] = []
 }
 
-/// A model of how food or dose moves glucose, as a change in mg/dL at a given time
+/// A model of how food or dose moves glucose, as a change in mg/dl at a given time
 /// relative to the no-influence baseline.
 protocol GlucoseInfluence {
     func change(at date: Date, context: ForecastContext) -> Double

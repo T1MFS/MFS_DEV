@@ -31,7 +31,8 @@ struct InsulinProfilesView: View {
                         }
                     Button("Add alternative profile", systemImage: "plus") {
                         editing = InsulinProfile(name: "", segments: store.main.segments.map {
-                            ProfileSegment(startMinute: $0.startMinute, basalUnitsPerHour: $0.basalUnitsPerHour, sensitivityMgdlPerUnit: $0.sensitivityMgdlPerUnit)
+                            ProfileSegment(startMinute: $0.startMinute, basalUnitsPerHour: $0.basalUnitsPerHour, sensitivityMgdlPerUnit: $0.sensitivityMgdlPerUnit,
+                                           carbRatioGramsPerUnit: $0.carbRatioGramsPerUnit, targetMgdl: $0.targetMgdl)
                         })
                     }
                 } header: {
@@ -88,8 +89,12 @@ private struct ProfileEditor: View {
                                 Text("to \(timeText(profile.endMinute(of: segment)))").foregroundStyle(.secondary)
                             }
                             HStack {
-                                numberField("Basal", value: $segment.basalUnitsPerHour, unit: "U/h")
-                                numberField("Sensitivity", value: $segment.sensitivityMgdlPerUnit, unit: "mg/dL per U")
+                                numberField("Basal", value: $segment.basalUnitsPerHour, unit: "u/h")
+                                numberField("Sensitivity", value: $segment.sensitivityMgdlPerUnit, unit: "mg/dl per u")
+                            }
+                            HStack {
+                                optionalNumberField("Carb ratio", value: $segment.carbRatioGramsPerUnit, unit: "c per u")
+                                optionalNumberField("Target", value: $segment.targetMgdl, unit: "mg/dl")
                             }
                         }
                     }
@@ -99,12 +104,13 @@ private struct ProfileEditor: View {
                         let start = profile.segments.isEmpty ? 0 : (stride(from: 0, to: 1440, by: 30).first { !used.contains($0) } ?? 0)
                         let last = profile.sortedSegments.last
                         profile.segments.append(ProfileSegment(startMinute: start,
-                            basalUnitsPerHour: last?.basalUnitsPerHour ?? 0, sensitivityMgdlPerUnit: last?.sensitivityMgdlPerUnit ?? 50))
+                            basalUnitsPerHour: last?.basalUnitsPerHour ?? 0, sensitivityMgdlPerUnit: last?.sensitivityMgdlPerUnit ?? 50,
+                            carbRatioGramsPerUnit: last?.carbRatioGramsPerUnit, targetMgdl: last?.targetMgdl))
                     }
                 } header: {
                     Text("Time frames")
                 } footer: {
-                    Text("Each frame runs until the next one starts; the last wraps past midnight. Basal is units per hour. Sensitivity is how many mg/dL one unit lowers glucose. Enter your own values.")
+                    Text("Each frame runs until the next one starts; the last wraps past midnight. Basal is units per hour. Sensitivity is how many mg/dl one unit lowers glucose. Enter your own values.")
                 }
                 if !profile.issues.isEmpty {
                     Section { ForEach(profile.issues, id: \.self) { Text($0).font(.footnote).foregroundStyle(.red) } }
@@ -133,6 +139,15 @@ private struct ProfileEditor: View {
         VStack(alignment: .leading) {
             Text("\(title) (\(unit))").font(.caption).foregroundStyle(.secondary)
             TextField("0", value: value, format: .number)
+                .keyboardType(.decimalPad)
+                .textFieldStyle(.roundedBorder)
+        }
+    }
+
+    private func optionalNumberField(_ title: String, value: Binding<Double?>, unit: String) -> some View {
+        VStack(alignment: .leading) {
+            Text("\(title) (\(unit))").font(.caption).foregroundStyle(.secondary)
+            TextField("Not set", value: value, format: .number)
                 .keyboardType(.decimalPad)
                 .textFieldStyle(.roundedBorder)
         }

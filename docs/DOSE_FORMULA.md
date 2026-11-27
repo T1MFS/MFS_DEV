@@ -1,6 +1,6 @@
 # Dose formula (toy model two)
 
-Reference for the formula edited in **Manage > menu > Dose formulas**. The same text is available in the app from the **Help** link at the top of that screen. Code: `Sources/DoseFormula.swift`.
+Reference for the formula edited in **Manage > Dosing > Advanced: dose formula**. The same text is available in the app from the **Help** link at the top of that screen. Code: `Sources/DoseFormula.swift`.
 
 ## What it computes
 
@@ -90,7 +90,7 @@ With 1 g each of carbs, protein and fat and the defaults, the curve peaks at 0.0
 
 - One-minute grid, minutes 0…720; later minutes return 0.
 - `impact(...)` linearly interpolates between grid minutes.
-- Values are per the units of the inputs (grams); there is no unit conversion to mg/dL yet. Treat results as relative until the factors are fitted to data.
+- Values are per the units of the inputs (grams); there is no unit conversion to mg/dl yet. Treat results as relative until the factors are fitted to data.
 
 ## Insulin action side
 
@@ -103,7 +103,7 @@ With 1 g each of carbs, protein and fat and the defaults, the curve peaks at 0.0
 | Field | Unit | Meaning |
 |---|---|---|
 | basal | units/hour | background insulin delivered during the time frame |
-| sensitivity (ISF) | mg/dL per unit | how far one unit lowers glucose |
+| sensitivity (ISF) | mg/dl per unit | how far one unit lowers glucose |
 
 Rules: at least one time frame, unique start minutes in 0…1439, basal ≥ 0, sensitivity > 0. Alternatives are chosen by hand and stay active until changed; `ProfileSwitchHook` is the extension point for automatic switching (none registered). No default values are supplied.
 
@@ -119,12 +119,12 @@ predicted glucose(t) = starting glucose + food model(t) + insulin model(t)
 
 The insulin model contributes a negative (lowering) term. Any future model (for example heart rate or sleep) would be another independent term added the same way. Not implemented: the app does not yet compute the insulin term or the sum.
 
-The unit mismatch is open: `B(t)` is in model units per gram (see Numerics), while the insulin term would be in mg/dL. They cannot be added until the food model is fitted to mg/dL.
+The unit mismatch is open: `B(t)` is in model units per gram (see Numerics), while the insulin term would be in mg/dl. They cannot be added until the food model is fitted to mg/dl.
 
 ### Not yet decided or built
 
 - The insulin model itself: its form, factors and whether it uses the table's duration or half-life.
-- Mapping `B(t)` to mg/dL so the sum is meaningful.
+- Mapping `B(t)` to mg/dl so the sum is meaningful.
 - Use of the sum in the forecast or footer.
 
 ## Known limits

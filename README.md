@@ -6,6 +6,33 @@ A standalone SwiftUI iOS app with sections for **Manage**, **Food**, and **Evalu
 
 Open `MFS.xcodeproj`, select the MFS scheme, choose an iOS Simulator, and run. The shared `MFSTests` scheme includes a fixture-based scan test using `IMG_0270.HEIC` and a stubbed Open Food Facts response.
 
+## Units and notation
+
+Use the same notation in the app, code comments, docs and conversation:
+
+| Quantity | Write | Example |
+|---|---|---|
+| Carbohydrate grams | `c` (not g) | 40 c |
+| Protein grams | `p` (not g) | 8 p |
+| Glucose | `mg/dl` | 120 mg/dl |
+| Insulin | `units` or `u` | 4.8 u, 0.9 u/h |
+
+Derived units follow the same letters: carb ratio is `c per u`, sensitivity is `mg/dl per u`. Fat and fiber grams stay `g`.
+
+## Loop and LoopKit compatibility
+
+All conversions live in `Sources/LoopKitBridge.swift` (the only file that maps between MFS and LoopKit types); the maths is in LoopKit-free files so tests cover it.
+
+| Direction | Rule |
+|---|---|
+| CGM sample in | `NewGlucoseSample` quantity is read as mg/dl; readings go back out with sync identifier `mfs-glucose-<epoch>` |
+| Profile out | Basal (u/h), sensitivity (mg/dl per u), carb ratio (c per u), target (range with equal ends) become Loop daily schedules; a midnight item carries the wrap-around value because Loop and pump schedules start at 0:00. nil if any time frame lacks the value |
+| Profile in | Sensitivity converted to mg/dl, target range becomes its midpoint; time frames start at every change in any schedule |
+| Pump events in | `NewPumpEvent.dose` is kept (bolus u, temp basal u/h and end time); older saved history without doses still loads |
+| Insulin on board | Same exponential model as LoopKit (6 h, 75 min peak, 10 min delay). Boluses only; scheduled basal is not netted out |
+
+MFS stays read-only toward the pump: no delivery commands are sent (see `docs/REMOTE_CONTROL_POLICY.md`). Not yet handled: mmol/L display, time zones other than the device's, 0.05 u pump rounding of imported schedules.
+
 ## Local Tidepool nutrition mapping
 
 Verified 2026-09-27 against Tidepool's authoritative [Food documentation](https://tidepool.redocly.app/docs/device-data/data-types/food) and [API schema repository](https://github.com/tidepool-org/TidepoolApi/tree/89007e44d8d03bacdb7f74c454cb8bebbc9889f5). Schema files: `reference/common/models/nutrition.v1.yaml`, `energy/kilocalories.v1.yaml`, `reference/data/models/food/food.v1.yaml`, and `reference/data/models/amount.v1.yaml`.
@@ -59,13 +86,13 @@ Food > Text is a table: name, carbs and protein (required), fat and fiber (optio
 
 ## Dose formula editor
 
-Manage > menu > Dose formulas edits toy model two: B(t) = b + C·(s * [A1·carbs·g_fast + A2·protein·g_hold])(t). Carbohydrate (net of fiber, chosen in the editor) drives a fast gamma component peaking at t1; protein drives a slow flat-top component centered at t2 (120 min hold and 60 min edge width are fixed); fat adds no glucose and only sets the time smear, whose width is σ minutes per gram of fat (no fat, no smear). Seven factors: three times (t1, t2, σ), three amplitudes (A1, A2, C) and an offset b. Defaults (A1 1, A2 1.5, C 0.5, t1 20, t2 240, σ 26.3, b 0) reproduce the reference curve (peak 0.0065 at 62 min, dip near 166, hump near 276) for 1 g each of carbs, protein and fat. The formula is saved on the device and previewed for the accepted food. The editor's Help button opens the full formulas and conversions, also in [docs/DOSE_FORMULA.md](docs/DOSE_FORMULA.md). It is not yet used for the forecast or the footer's bolus values.
+Manage > Dosing > Advanced: dose formula edits toy model two: B(t) = b + C·(s * [A1·carbs·g_fast + A2·protein·g_hold])(t). Carbohydrate (net of fiber, chosen in the editor) drives a fast gamma component peaking at t1; protein drives a slow flat-top component centered at t2 (120 min hold and 60 min edge width are fixed); fat adds no glucose and only sets the time smear, whose width is σ minutes per gram of fat (no fat, no smear). Seven factors: three times (t1, t2, σ), three amplitudes (A1, A2, C) and an offset b. Defaults (A1 1, A2 1.5, C 0.5, t1 20, t2 240, σ 26.3, b 0) reproduce the reference curve (peak 0.0065 at 62 min, dip near 166, hump near 276) for 1 g each of carbs, protein and fat. The formula is saved on the device and previewed for the accepted food. The editor's Help button opens the full formulas and conversions, also in [docs/DOSE_FORMULA.md](docs/DOSE_FORMULA.md). Dosing builds a recommended bolus from the selected tab plus a glucose correction and insulin on board, shown with its parts and a list of inputs that are still placeholders (carb ratio and target in the insulin profile editor, current glucose, insulin on board, past meal results). `Sources/DoseRecommendation.swift` holds the recommenders and the input sources to plug into. Above Advanced, Dosing has three tabs: Meal specific (placeholder until Evaluate has results), Simple (a carbs number and a protein number in grams, protein defaulting to carbs ÷ 5; each is turned into units with the profile's carb ratio, and the expected rise is those units times sensitivity) and Experimental (a bolus for the first 120 minutes of B(t) plus an enhanced basal rate for the tail, and the expected rise as the area of B(t), using the active profile's sensitivity; display only). The formula is not yet used for the forecast. The glucose chart scrolls sideways through history; the 1, 3, 6, 12, 24 buttons under it set the visible hours, and a translucent black dot marks the meal time. The Evaluate tab overlays glucose, insulin parts (on board, bolus, basal; no data until pump history records amounts) and Apple Health biometrics, each with a checkbox.
 
 ## Insulin profiles and service connections
 
 Manage toolbar menu:
 
-- **Insulin profiles**: one Main profile plus any number of alternatives (for example "Sick"). Each profile has time frames (6am-11am, 11am-4pm, ...), each with basal (units/hour) and sensitivity (mg/dL one unit lowers glucose). Alternatives are selected by hand with Use / Back to main and stay in effect until changed. `ProfileSwitchHook` is the extension point for automatic switching; none are registered, and a manual choice is never overridden by a hook. No default values are supplied.
+- **Insulin profiles**: one Main profile plus any number of alternatives (for example "Sick"). Each profile has time frames (6am-11am, 11am-4pm, ...), each with basal (units/hour) and sensitivity (mg/dl one unit lowers glucose). Alternatives are selected by hand with Use / Back to main and stay in effect until changed. `ProfileSwitchHook` is the extension point for automatic switching; none are registered, and a manual choice is never overridden by a hook. No default values are supplied.
 - **Service connections**: connection details only, no data format. A service has a name, https address and one of: none, shared secret in a header (Nightscout preset: `api-secret`, optionally SHA-1 hashed), bearer token, or a client certificate for mutual TLS (import a `.p12`). Secrets and certificates are stored in the Keychain.
 - **Apple Health** (read only): pulse rate, sleep and heart rate variability. This needs the HealthKit capability on the App ID and provisioning profile (`Sources/MFS.entitlements`). The app never writes to Apple Health (`requestAuthorization(toShare: [])`), but the bundled LoopKit contains HealthKit write code, so App Store Connect requires `NSHealthUpdateUsageDescription` in addition to `NSHealthShareUsageDescription`; both are set in the build settings.
 - **Biometrics to DigitalMe**: heart rate (`heartRate`, bpm), heart rate variability (`heartRateVariability`, ms) and nightly sleep (`sleepDuration`, minutes) are mapped to the Tidepool-format `biometric` type defined in [TidepoolApi_extended](https://github.com/fx2-t1d/TidepoolApi_extended) and sent with `DigitalMeUploadClient.upload(records:to: .biometrics, ...)` to DigitalMe's `POST /biometrics/upload`, over the same mTLS connection and security checks as other uploads. A biometric is a measurement of the body's state at a point in time; glucose is never sent this way and keeps `cbg`/`smbg`. `HealthBiometricReader` reads only new samples (anchored queries); save the returned `BiometricBatch.pendingState` only after the upload succeeds.

@@ -78,7 +78,11 @@ struct InsulinProfile: Identifiable, Codable, Equatable {
             let sorted = items.sorted { $0.startTime < $1.startTime }
             return (sorted.last { Int($0.startTime / 60) <= minute } ?? sorted.last)?.value
         }
-        let starts = Set([basal, sensitivity, carbRatio ?? [], target ?? []].flatMap { $0 }.map { Int($0.startTime / 60) })
+        let schedules: [[ScheduleItem]] = [basal, sensitivity, carbRatio ?? [], target ?? []]
+        var starts = Set<Int>()
+        for schedule in schedules {
+            for item in schedule { starts.insert(Int(item.startTime / 60)) }
+        }
         guard !basal.isEmpty, !sensitivity.isEmpty, starts.allSatisfy({ (0..<1440).contains($0) }) else { return nil }
         let segments = starts.sorted().compactMap { minute -> ProfileSegment? in
             guard let b = value(basal, atMinute: minute), let s = value(sensitivity, atMinute: minute) else { return nil }

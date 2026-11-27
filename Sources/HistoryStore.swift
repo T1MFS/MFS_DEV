@@ -1,10 +1,13 @@
 import Foundation
 
+private let sharedQueue = DispatchQueue(label: "MFS.HistoryStore", qos: .utility)
+
 /// Keeps a list of records in a JSON file in Application Support, which survives app updates and new builds.
 /// Writes are atomic and happen off the main thread; the file is never deleted by the app.
 struct HistoryStore<Element: Codable> {
     let url: URL
-    private let queue = DispatchQueue(label: "MFS.HistoryStore", qos: .utility)
+    // Shared so writes from any instance to the same file stay ordered and flush() waits for all of them.
+    private static var queue: DispatchQueue { sharedQueue }
 
     init(filename: String, directory: URL? = nil) {
         let base = directory ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -21,7 +24,7 @@ struct HistoryStore<Element: Codable> {
 
     func save(_ elements: [Element]) {
         let url = url
-        queue.async {
+        Self.queue.async {
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
             guard let data = try? encoder.encode(elements) else { return }
@@ -30,5 +33,5 @@ struct HistoryStore<Element: Codable> {
     }
 
     /// Waits for queued writes; for tests.
-    func flush() { queue.sync {} }
+    func flush() { Self.queue.sync {} }
 }

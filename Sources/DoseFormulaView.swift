@@ -1,49 +1,44 @@
 import SwiftUI
 
 /// Edits the seven factors of toy model two and previews the curve for the accepted food.
+/// Pushed from the Advanced row of the Dosing section.
 struct DoseFormulaView: View {
     @EnvironmentObject private var formulaStore: DoseFormulaStore
     @EnvironmentObject private var foodStore: AcceptedFoodStore
-    @Environment(\.dismiss) private var dismiss
     @State private var showHelp = false
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    Text("B(t) = b + C·(s * [A1·carbs·g_fast + A2·protein·g_hold])(t)")
-                        .font(.footnote.monospaced())
-                    Text("B(t) is the impact on blood glucose t minutes after eating. Carbohydrate (net of fiber, below) drives g_fast, which peaks at t1. Protein drives g_hold, a flat top centered at t2 (120 min hold, 60 min edge width, both fixed). Fat adds no glucose; it only sets the time smear s, whose width is σ minutes per gram of fat.")
-                        .font(.footnote).foregroundStyle(.secondary)
-                }
-                Section("Times (minutes)") {
-                    field("t1  fast peak", $formulaStore.formula.fastPeakMinutes)
-                    field("t2  slow hold center", $formulaStore.formula.slowCenterMinutes)
-                    field("σ  smear per g fat", $formulaStore.formula.smearMinutesPerGramFat)
-                }
-                Section("Amplitudes") {
-                    field("A1  carbs (fast)", $formulaStore.formula.fastAmplitude)
-                    field("A2  protein (slow)", $formulaStore.formula.slowAmplitude)
-                    field("C  overall scale", $formulaStore.formula.scale)
-                }
-                Section("Offset") {
-                    field("b  baseline", $formulaStore.formula.offset)
-                }
-                Section("Carbohydrate") {
-                    Picker("Fiber", selection: $formulaStore.formula.fiber) {
-                        ForEach(CarbFiberTreatment.allCases) { Text($0.label).tag($0) }
-                    }
-                }
-                Section("Preview") { preview }
+        Form {
+            Section {
+                Text("B(t) = b + C·(s * [A1·carbs·g_fast + A2·protein·g_hold])(t)")
+                    .font(.footnote.monospaced())
+                Text("B(t) is the impact on blood glucose t minutes after eating. Carbohydrate (net of fiber, below) drives g_fast, which peaks at t1. Protein drives g_hold, a flat top centered at t2 (120 min hold, 60 min edge width, both fixed). Fat adds no glucose; it only sets the time smear s, whose width is σ minutes per gram of fat.")
+                    .font(.footnote).foregroundStyle(.secondary)
             }
-            .navigationTitle("Dose formula")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Help") { showHelp = true } }
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            Section("Times (minutes)") {
+                field("t1  fast peak", $formulaStore.formula.fastPeakMinutes)
+                field("t2  slow hold center", $formulaStore.formula.slowCenterMinutes)
+                field("σ  smear per g fat", $formulaStore.formula.smearMinutesPerGramFat)
             }
-            .sheet(isPresented: $showHelp) { DoseFormulaHelpView() }
+            Section("Amplitudes") {
+                field("A1  carbs (fast)", $formulaStore.formula.fastAmplitude)
+                field("A2  protein (slow)", $formulaStore.formula.slowAmplitude)
+                field("C  overall scale", $formulaStore.formula.scale)
+            }
+            Section("Offset") {
+                field("b  baseline", $formulaStore.formula.offset)
+            }
+            Section("Carbohydrate") {
+                Picker("Fiber", selection: $formulaStore.formula.fiber) {
+                    ForEach(CarbFiberTreatment.allCases) { Text($0.label).tag($0) }
+                }
+            }
+            Section("Preview") { preview }
         }
+        .navigationTitle("Dose formula")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { ToolbarItem(placement: .primaryAction) { Button("Help") { showHelp = true } } }
+        .sheet(isPresented: $showHelp) { DoseFormulaHelpView() }
     }
 
     private func field(_ title: String, _ value: Binding<Double>) -> some View {

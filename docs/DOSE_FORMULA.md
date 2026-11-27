@@ -1,6 +1,6 @@
 # Dose formula (toy model two)
 
-Reference for the formula edited in **Manage > menu > Dose formulas**. The same text is available in the app from the **Help** link at the top of that screen. Code: `Sources/DoseFormula.swift`.
+Reference for the formula edited in **Manage > Dosing > Advanced: dose formula**. The same text is available in the app from the **Help** link at the top of that screen. Code: `Sources/DoseFormula.swift`.
 
 ## What it computes
 

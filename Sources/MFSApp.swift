@@ -28,6 +28,7 @@ struct MFSApp: App {
     @StateObject private var profileStore = InsulinProfileStore()
     @StateObject private var serviceStore = ServiceConnectionStore()
     @StateObject private var formulaStore = DoseFormulaStore()
+    @StateObject private var dosingStore = DosingStore()
     @StateObject private var biometricStream = BiometricStream(read: { kinds, state in
         try await HealthBiometricReader().read(kinds: kinds, state: state)
     })
@@ -106,6 +107,7 @@ struct MFSApp: App {
             .preferredColorScheme(.light)
             .environmentObject(foodStore)
             .environmentObject(formulaStore)
+            .environmentObject(dosingStore)
             .environmentObject(profileStore)
             .environmentObject(serviceStore)
             .environmentObject(biometricStream)
@@ -188,7 +190,6 @@ struct MacroPieChart: View {
 private struct ManageView: View {
     @EnvironmentObject private var store: AcceptedFoodStore
     @State private var showDevices = false
-    @State private var showFormula = false
     @State private var showProfiles = false
     @State private var showServices = false
     @State private var showStream = false
@@ -196,6 +197,7 @@ private struct ManageView: View {
     var body: some View {
         List {
             GlucoseView()
+            DosingSection()
             if let food = store.food {
                 Section("Accepted food") {
                     Text(food.product.name)
@@ -232,7 +234,7 @@ private struct ManageView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            MealDoseFooter(food: store.food)
+            DosingFooter(food: store.food)
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -241,7 +243,6 @@ private struct ManageView: View {
                     Button("Insulin profiles") { showProfiles = true }
                     Button("Service connections") { showServices = true }
                     Button("Biometric stream") { showStream = true }
-                    Button("Dose formulas") { showFormula = true }
                     Button("Safety limits") {}.disabled(true)
                 } label: {
                     Image(systemName: "ellipsis.circle")
@@ -249,7 +250,6 @@ private struct ManageView: View {
             }
         }
         .sheet(isPresented: $showDevices) { ConnectDevicesView() }
-        .sheet(isPresented: $showFormula) { DoseFormulaView() }
         .sheet(isPresented: $showProfiles) { InsulinProfilesView() }
         .sheet(isPresented: $showServices) { ServiceConnectionsView() }
         .sheet(isPresented: $showStream) { BiometricStreamView() }
@@ -445,39 +445,6 @@ private struct G7Section: View {
     }
 }
 
-private struct MealDoseFooter: View {
-    let food: AcceptedFood?
-
-    var body: some View {
-        Grid(horizontalSpacing: 8, verticalSpacing: 10) {
-            GridRow {
-                cell(gramsText(food?.totalCarbohydrates), "Carbohydrate", "Carbs in the meal (g)")
-                cell(gramsText(food?.totalProtein), "Protein", "Protein in the meal (g)")
-                cell(gramsText(food?.totalFat), "Fat", "Fat in the meal (g)")
-            }
-            Divider()
-            GridRow {
-                cell("—", "Bolus for carbohydrate", "Formula bolus (U)")
-                cell("—", "Bolus for protein", "Formula bolus (U)")
-                cell("—", "Basal", "Current basal rate (U/h)")
-            }
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity)
-        .background(.bar)
-    }
-
-    private func cell(_ value: String, _ title: String, _ definition: String) -> some View {
-        VStack(spacing: 2) {
-            Text(value).font(.title3.bold())
-            Text(title).font(.caption.weight(.semibold))
-            Text(definition).font(.caption2).foregroundStyle(.secondary)
-        }
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity)
-    }
-}
-
 private struct SectionRootView: View {
     let section: MFSSection
 
@@ -487,6 +454,8 @@ private struct SectionRootView: View {
                 FoodSectionView()
             } else if section == .manage {
                 ManageView()
+            } else if section == .evaluate {
+                EvaluateView()
             } else {
                 ZStack {
                     Color(red: 0.96, green: 0.97, blue: 0.99)

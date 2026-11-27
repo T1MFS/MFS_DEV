@@ -2,6 +2,7 @@ import SwiftUI
 import Charts
 
 /// Glucose trend with a movable meal marker, shown as sections inside the Manage list.
+/// The chart scrolls sideways through history; the range under it sets how many hours are visible.
 /// Food and dose do not influence the forecast yet.
 struct GlucoseView: View {
     @EnvironmentObject private var feed: GlucoseFeed
@@ -9,11 +10,23 @@ struct GlucoseView: View {
 
     private let forecaster = GlucoseForecaster()
     private let window: TimeInterval = 2 * 60 * 60
+    private static let rangeHours = [1, 3, 6, 12, 24]
+
+    @State private var rangeHours = 3
+    @State private var scrollPosition = Date()
 
     private var readings: [GlucoseReading] { feed.readings }
     private var anchor: Date { readings.last?.date ?? Date() }
     private var mealTime: Date { store.mealTime ?? anchor }
-    private var domain: ClosedRange<Date> { anchor.addingTimeInterval(-window)...anchor.addingTimeInterval(window) }
+    private var visibleLength: TimeInterval { TimeInterval(rangeHours) * 3600 }
+    /// Forecast shown past the latest reading; a short range shows a shorter stretch of it.
+    private var lookahead: TimeInterval { min(window, visibleLength / 3) }
+    private var domain: ClosedRange<Date> {
+        let end = anchor.addingTimeInterval(window)
+        let start = min(readings.first?.date ?? anchor, end.addingTimeInterval(-visibleLength))
+        return start...end
+    }
+    private var latestPosition: Date { anchor.addingTimeInterval(lookahead - visibleLength) }
 
     private var context: ForecastContext {
         let foods = store.food.map {
@@ -30,6 +43,7 @@ struct GlucoseView: View {
                 if let latest = readings.last {
                     header(latest)
                     chart
+                    rangePicker
                     Text("Forecast is the latest reading held flat. Food and dose do not influence it yet.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -41,7 +55,7 @@ struct GlucoseView: View {
             if store.food != nil, !readings.isEmpty {
                 Section("Meal time") {
                     Text(mealTimeDescription)
-                    Text("Drag the pie chart along the line in 5-minute steps.")
+                    Text("Drag the dot on the chart in 5-minute steps.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                     if store.mealTime != nil {
@@ -65,9 +79,32 @@ struct GlucoseView: View {
         }
     }
 
+    private var rangePicker: some View {
+        HStack(spacing: 6) {
+            Spacer()
+            ForEach(Self.rangeHours, id: \.self) { hours in
+                Button {
+                    rangeHours = hours
+                    scrollPosition = latestPosition
+                } label: {
+                    Text("\(hours)")
+                        .font(.caption.weight(.semibold))
+                        .frame(minWidth: 26, minHeight: 22)
+                        .background(rangeHours == hours ? Color.accentColor : Color.secondary.opacity(0.15), in: Capsule())
+                        .foregroundStyle(rangeHours == hours ? Color.white : Color.primary)
+                }
+                .buttonStyle(.plain)
+            }
+            Text("h").font(.caption).foregroundStyle(.secondary)
+            Spacer()
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Chart range in hours")
+    }
+
     private var chart: some View {
         Chart {
-            ForEach(readings.filter { domain.contains($0.date) }) { reading in
+            ForEach(readings) { reading in
                 LineMark(x: .value("Time", reading.date),
                          y: .value("mg/dL", reading.milligramsPerDeciliter),
                          series: .value("Series", "Glucose"))
@@ -83,8 +120,18 @@ struct GlucoseView: View {
         }
         .chartXScale(domain: domain)
         .chartYScale(domain: yDomain)
+        .chartScrollableAxes(.horizontal)
+        .chartXVisibleDomain(length: visibleLength)
+        .chartScrollPosition(x: $scrollPosition)
         .chartOverlay { proxy in mealMarker(proxy) }
         .frame(height: 260)
+        .onAppear { scrollPosition = latestPosition }
+        .onChange(of: readings.last?.date) { old, _ in
+            // Follow new readings only while the chart is showing the latest.
+            if let old, abs(scrollPosition.timeIntervalSince(old.addingTimeInterval(lookahead - visibleLength))) < 60 {
+                scrollPosition = latestPosition
+            }
+        }
     }
 
     private var yDomain: ClosedRange<Double> {
@@ -94,18 +141,24 @@ struct GlucoseView: View {
         return low...high
     }
 
+    /// A translucent black dot at the meal time, so the reading under it stays visible. Drag it to move the meal.
     @ViewBuilder
     private func mealMarker(_ proxy: ChartProxy) -> some View {
-        if let food = store.food, let plotFrame = proxy.plotFrame {
+        if store.food != nil, let plotFrame = proxy.plotFrame {
             GeometryReader { geometry in
-                let origin = geometry[plotFrame].origin
-                if let x = proxy.position(forX: mealTime), let y = proxy.position(forY: glucose(at: mealTime)) {
-                    MacroPieChart(food: food, height: 56, compact: true)
-                        .position(x: origin.x + x, y: origin.y + y)
+                let frame = geometry[plotFrame]
+                if let x = proxy.position(forX: mealTime), let y = proxy.position(forY: glucose(at: mealTime)),
+                   x >= 0, x <= frame.width {
+                    Circle()
+                        .fill(Color.black.opacity(0.35))
+                        .frame(width: 14, height: 14)
+                        .frame(width: 36, height: 36)
+                        .contentShape(Rectangle())
+                        .position(x: frame.origin.x + x, y: frame.origin.y + y)
                         .gesture(
                             DragGesture(coordinateSpace: .named("glucoseOverlay"))
                                 .onChanged { drag in
-                                    guard let date: Date = proxy.value(atX: drag.location.x - origin.x) else { return }
+                                    guard let date: Date = proxy.value(atX: drag.location.x - frame.origin.x) else { return }
                                     let clamped = min(max(date, domain.lowerBound), domain.upperBound)
                                     store.mealTime = clamped.snapped(toFiveMinutesFrom: anchor)
                                 }

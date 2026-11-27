@@ -40,4 +40,27 @@ final class DoseFormulaTests: XCTestCase {
         XCTAssertEqual(formula.impact(carbohydrate: nil, fiber: nil, protein: nil, fat: nil, minutes: 62), 0)
         XCTAssertEqual(formula.impact(carbohydrate: 40, fiber: nil, protein: 1, fat: 1, minutes: -1), 0)
     }
+
+    func testExperimentalDoseCoversWholeImpactAndSplitsBolusFromBasal() throws {
+        let formula = DoseFormula()
+        let dose = try XCTUnwrap(formula.experimentalDose(carbohydrate: 30, fiber: nil, protein: 40, fat: 5, sensitivityMgdlPerUnit: 50))
+        let total = formula.curve(carbohydrate: 30, protein: 40, fat: 5).reduce(0, +)
+        let tailUnits = dose.extraBasalUnitsPerHour * Double(dose.extraBasalMinutes) / 60
+        XCTAssertEqual(dose.bolusUnits + tailUnits, total / 50, accuracy: total / 50 * 0.01)
+        XCTAssertGreaterThan(dose.bolusUnits, 0)
+        XCTAssertGreaterThan(dose.extraBasalUnitsPerHour, 0)
+        XCTAssertNil(formula.experimentalDose(carbohydrate: 30, fiber: nil, protein: 40, fat: 5, sensitivityMgdlPerUnit: 0))
+        XCTAssertNil(formula.experimentalDose(carbohydrate: nil, fiber: nil, protein: nil, fat: nil, sensitivityMgdlPerUnit: 50))
+    }
+
+    func testSimpleProteinDefaultsToCarbsOverFiveUntilTyped() {
+        let store = DosingStore(defaults: UserDefaults(suiteName: "DosingStoreTests")!)
+        XCTAssertNil(store.simpleProtein)
+        store.simpleCarbs = 10
+        XCTAssertEqual(store.simpleProtein, 2)
+        store.simpleProteinEntry = 3
+        XCTAssertEqual(store.simpleProtein, 3)
+        store.simpleProteinEntry = nil
+        XCTAssertEqual(store.simpleProtein, 2)
+    }
 }

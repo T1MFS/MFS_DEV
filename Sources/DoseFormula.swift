@@ -82,6 +82,70 @@ struct DoseFormula: Codable, Equatable {
     }
 }
 
+/// A bolus plus an enhanced (extra) basal rate meant to cancel the modelled glucose impact of a meal.
+/// Displayed only; nothing here is sent to a pump.
+struct ExperimentalDose: Equatable {
+    var bolusUnits: Double
+    var extraBasalUnitsPerHour: Double
+    var extraBasalMinutes: Int
+}
+
+extension DoseFormula {
+    /// Treats B(t) as mg/dL of rise per minute, so total insulin is its area divided by sensitivity.
+    /// The part inside `bolusMinutes` goes in as a bolus; the tail (until the curve falls below 1% of its peak)
+    /// is spread evenly as extra basal. Results are relative until B(t) is fitted to data.
+    func experimentalDose(carbohydrate: Double?, fiber: Double?, protein: Double?, fat: Double?,
+                          sensitivityMgdlPerUnit: Double, bolusMinutes: Int = 120) -> ExperimentalDose? {
+        guard sensitivityMgdlPerUnit > 0 else { return nil }
+        let impact = curve(carbohydrate: carbohydrate, fiber: fiber, protein: protein, fat: fat).map { max($0 - offset, 0) }
+        guard let peak = impact.max(), peak > 0 else { return nil }
+        let split = min(bolusMinutes, impact.count)
+        let bolusArea = impact[..<split].reduce(0, +)
+        let tail = Array(impact[split...])
+        let tailArea = tail.reduce(0, +)
+        let tailMinutes = (tail.lastIndex { $0 >= peak * 0.01 } ?? -1) + 1
+        let extraBasal = tailMinutes > 0 ? tailArea / sensitivityMgdlPerUnit / (Double(tailMinutes) / 60) : 0
+        return ExperimentalDose(bolusUnits: bolusArea / sensitivityMgdlPerUnit,
+                                extraBasalUnitsPerHour: extraBasal,
+                                extraBasalMinutes: tailMinutes)
+    }
+}
+
+enum DosingMode: String, Codable, CaseIterable, Identifiable {
+    case mealSpecific, simple, experimental
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .mealSpecific: return "Meal specific"
+        case .simple: return "Simple"
+        case .experimental: return "Experimental"
+        }
+    }
+}
+
+/// Which dosing tab is selected and the Simple tab's numbers.
+final class DosingStore: ObservableObject {
+    /// Protein defaults to the carbohydrate number divided by this.
+    static let proteinDivisor = 5.0
+
+    @Published var mode: DosingMode { didSet { defaults.set(mode.rawValue, forKey: key) } }
+    @Published var simpleCarbs: Double?
+    /// nil while the user has not typed a protein number; then protein follows carbs.
+    @Published var simpleProteinEntry: Double?
+
+    private let defaults: UserDefaults
+    private let key = "MFS.DosingMode"
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        mode = defaults.string(forKey: key).flatMap(DosingMode.init(rawValue:)) ?? .simple
+    }
+
+    var simpleProtein: Double? { simpleProteinEntry ?? simpleCarbs.map { $0 / Self.proteinDivisor } }
+}
+
 final class DoseFormulaStore: ObservableObject {
     @Published var formula: DoseFormula { didSet { save() } }
     private let defaults: UserDefaults
